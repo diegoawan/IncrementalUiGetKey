@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IncrementalUi | Get Key</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ min-height:100vh;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ padding:20px;
+ background:#090909;
+ color:#fff;
+ font-family:Arial,sans-serif;
+}
+.card{
+ width:100%;
+ max-width:420px;
+ padding:30px;
+ border:1px solid #292929;
+ border-radius:18px;
+ background:#111;
+ text-align:center;
+}
+.logo{font-size:27px;font-weight:800}
+.subtitle{color:#888;font-size:13px;margin-top:8px}
+h2{margin-top:35px;font-size:21px}
+.description{color:#999;font-size:14px;line-height:1.6}
+.timer{
+ font-size:48px;
+ font-weight:800;
+ margin:25px 0;
+}
+button{
+ width:100%;
+ padding:15px;
+ border:0;
+ border-radius:9px;
+ background:#fff;
+ color:#000;
+ font-weight:800;
+ font-size:15px;
+ cursor:pointer;
+}
+button:disabled{opacity:.35;cursor:not-allowed}
+#status{color:#aaa;font-size:13px;margin-top:18px}
+#keyBox{
+ display:none;
+ margin-top:20px;
+ padding:15px;
+ background:#1b1b1b;
+ border-radius:9px;
+ overflow-wrap:anywhere;
+}
+#key{font-size:13px;line-height:1.6}
+.footer{color:#555;font-size:11px;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="card">
+ <div class="logo">IncrementalUi</div>
+ <div class="subtitle">Official Key System</div>
+
+ <h2>Get Your Key</h2>
+ <p class="description">
+ Complete the timer below to generate your 24-hour access key.
+ </p>
+
+ <div class="timer" id="timer">00:30</div>
+
+ <button id="start">Get Key</button>
+ <button id="claim" style="display:none" disabled>
+ Generate Key
+ </button>
+
+ <div id="status">Press Get Key to begin.</div>
+
+ <div id="keyBox">
+  <p>Your access key:</p>
+  <div id="key"></div>
+  <br>
+  <button id="copy">Copy Key</button>
+ </div>
+
+ <div class="footer">IncrementalUi &copy; 2026</div>
+</div>
+
+<script>
+const API_URL = "https://incrementalui-keys.diegoawan23.workers.dev";
+
+const timer = document.getElementById("timer");
+const startButton = document.getElementById("start");
+const claimButton = document.getElementById("claim");
+const statusText = document.getElementById("status");
+const keyBox = document.getElementById("keyBox");
+const keyText = document.getElementById("key");
+
+let challenge = null;
+let remaining = 30;
+let interval = null;
+
+async function post(path, data = {}) {
+ const response = await fetch(API_URL + path, {
+  method: "POST",
+  headers: {"Content-Type":"application/json"},
+  body: JSON.stringify(data)
+ });
+
+ const result = await response.json();
+
+ if (!response.ok) {
+  throw new Error(result.error || "Request failed");
+ }
+
+ return result;
+}
+
+function showTime() {
+ timer.textContent = "00:" + String(remaining).padStart(2,"0");
+}
+
+startButton.onclick = async () => {
+ startButton.disabled = true;
+ statusText.textContent = "Starting timer...";
+
+ try {
+  const result = await post("/api/start");
+  challenge = result.challenge;
+  remaining = 30;
+
+  startButton.style.display = "none";
+  claimButton.style.display = "block";
+  statusText.textContent = "Please wait for the timer.";
+
+  showTime();
+
+  interval = setInterval(() => {
+   remaining--;
+   showTime();
+
+   if (remaining <= 0) {
+    clearInterval(interval);
+    claimButton.disabled = false;
+    statusText.textContent = "Timer completed! Generate your key.";
+   }
+  }, 1000);
+
+ } catch (error) {
+  startButton.disabled = false;
+  statusText.textContent = error.message;
+ }
+};
+
+claimButton.onclick = async () => {
+ claimButton.disabled = true;
+ statusText.textContent = "Generating your key...";
+
+ try {
+  const result = await post("/api/claim", {
+   challenge: challenge
+  });
+
+  keyText.textContent = result.key;
+  keyBox.style.display = "block";
+  claimButton.style.display = "none";
+  timer.textContent = "DONE";
+  statusText.textContent = "Your 24-hour key is ready!";
+
+ } catch (error) {
+  claimButton.disabled = false;
+  statusText.textContent = error.message;
+ }
+};
+
+document.getElementById("copy").onclick = async () => {
+ try {
+  await navigator.clipboard.writeText(keyText.textContent);
+  statusText.textContent = "Key copied!";
+ } catch {
+  statusText.textContent = "Please copy the key manually.";
+ }
+};
+</script>
+</body>
+</html>
