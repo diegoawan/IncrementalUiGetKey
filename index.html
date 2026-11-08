@@ -1,556 +1,453 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="ember">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IncrementalUi | Get Key</title>
-
 <style>
+:root{--bg:#0b0710;--a:#ff5e3a;--b:#ffb347;--card:rgba(22,14,28,.72);--line:rgba(255,255,255,.1);--txt:#fff4ea;--mut:#a89aa8}
+[data-theme=ocean]{--bg:#05101a;--a:#22d3ee;--b:#6366f1;--card:rgba(10,22,34,.72);--txt:#eaf8ff;--mut:#8fa5b8}
+[data-theme=toxic]{--bg:#06110a;--a:#4ade80;--b:#d9f99d;--card:rgba(10,24,14,.72);--txt:#effff2;--mut:#8fb097}
+[data-theme=orchid]{--bg:#0d0713;--a:#e879f9;--b:#818cf8;--card:rgba(24,12,34,.72);--txt:#fbefff;--mut:#a998b8}
 *{box-sizing:border-box}
-
-body{
- margin:0;
- min-height:100vh;
- display:flex;
- align-items:center;
- justify-content:center;
- padding:20px;
- background:#090909;
- color:#fff;
- font-family:Arial,sans-serif;
-}
-
-.card{
- width:100%;
- max-width:440px;
- padding:26px;
- border:1px solid #292929;
- border-radius:18px;
- background:#111;
- text-align:center;
-}
-
-.logo{font-size:27px;font-weight:800}
-.subtitle{color:#888;font-size:13px;margin-top:8px}
-
-h2{margin-top:30px;font-size:22px}
-
-.description{
- color:#999;
- font-size:14px;
- line-height:1.6;
-}
-
-.progress{
- height:6px;
- background:#292929;
- border-radius:10px;
- margin:22px 0;
- overflow:hidden;
-}
-
-.progressBar{
- height:100%;
- width:0%;
- background:#fff;
- transition:.3s;
-}
-
-.task{
- text-align:left;
- padding:16px;
- border:1px solid #292929;
- border-radius:12px;
- margin-top:12px;
- background:#151515;
-}
-
-.taskTop{
- display:flex;
- align-items:center;
- justify-content:space-between;
- gap:10px;
-}
-
+html{height:100%}
+body{margin:0;min-height:100%;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% -10%,color-mix(in srgb,var(--a) 22%,var(--bg)),var(--bg) 60%);color:var(--txt);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;overflow-x:hidden;transition:background .6s}
+#gl,#fx{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.bar{position:fixed;top:12px;right:12px;z-index:5;display:flex;gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:99px;background:var(--card);backdrop-filter:blur(10px)}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid transparent;padding:0;margin:0;cursor:pointer;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.dot.on{border-color:#fff;transform:scale(1.15)}
+.dot:focus-visible,#snd:focus-visible,#fxb:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#snd,#fxb{background:none;border:0;color:var(--txt);font-size:16px;cursor:pointer;padding:0 2px;margin:0;width:auto}
+.card{position:relative;z-index:2;width:100%;max-width:460px;padding:28px 24px;border-radius:22px;background:var(--card);backdrop-filter:blur(14px);text-align:center;border:1px solid var(--line);animation:rise .9s cubic-bezier(.2,.9,.2,1) both;box-shadow:0 30px 80px -30px color-mix(in srgb,var(--a) 60%,transparent)}
+.card::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:radial-gradient(260px circle at var(--mx,50%) var(--my,0%),var(--a),transparent 70%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+@keyframes rise{from{opacity:0;transform:translateY(30px) scale(.96);filter:blur(8px)}}
+.logo{font-size:30px;font-weight:900;letter-spacing:-.5px;background:linear-gradient(90deg,var(--a),var(--b),var(--a));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:flow 4s linear infinite}
+@keyframes flow{to{background-position:-200% 0}}
+.subtitle{color:var(--mut);font-size:13px;margin-top:6px}
+h2{margin:24px 0 6px;font-size:21px}
+.description{color:var(--mut);font-size:14px;line-height:1.6;margin:0}
+.progress{height:8px;background:rgba(255,255,255,.08);border-radius:10px;margin:20px 0;overflow:hidden}
+.progressBar{height:100%;width:0;background:linear-gradient(90deg,var(--a),var(--b));border-radius:10px;transition:width .6s cubic-bezier(.3,1.4,.5,1);box-shadow:0 0 14px var(--a)}
+.task{position:relative;text-align:left;padding:15px;border:1px solid var(--line);border-radius:14px;margin-top:11px;background:rgba(255,255,255,.03);overflow:hidden;transition:opacity .4s,transform .3s,border-color .4s}
+.task.locked{opacity:.4;filter:saturate(.3)}
+.task.active{border-color:var(--a);transform:scale(1.015);box-shadow:0 0 24px -8px var(--a)}
+.task.done{border-color:color-mix(in srgb,#4ade80 60%,transparent)}
+.taskTop{display:flex;align-items:center;gap:12px}
+.ico{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:18px;background:linear-gradient(135deg,var(--a),var(--b));color:#150a10}
+.done .ico{background:#4ade80;animation:pop .5s}
+@keyframes pop{50%{transform:scale(1.35) rotate(-8deg)}}
 .taskTitle{font-weight:800;font-size:15px}
-
-.taskDesc{
- color:#888;
- font-size:12px;
- margin-top:7px;
- line-height:1.5;
-}
-
-.taskStatus{
- color:#888;
- font-size:11px;
- margin-top:10px;
-}
-
-.taskStatus.done{color:#8bff9c}
-
-button{
- width:100%;
- padding:13px;
- border:0;
- border-radius:9px;
- background:#fff;
- color:#000;
- font-weight:800;
- font-size:14px;
- cursor:pointer;
- margin-top:13px;
-}
-
-button:disabled{
- opacity:.35;
- cursor:not-allowed;
-}
-
-.secondary{
- background:#252525;
- color:#fff;
-}
-
-.timer{
- font-size:32px;
- font-weight:800;
- margin:12px 0;
-}
-
-#status{
- color:#aaa;
- font-size:13px;
- margin-top:18px;
- line-height:1.5;
-}
-
-#keyBox{
- display:none;
- margin-top:20px;
- padding:15px;
- background:#1b1b1b;
- border-radius:9px;
- overflow-wrap:anywhere;
-}
-
-#key{
- font-size:13px;
- line-height:1.6;
-}
-
-.footer{
- color:#555;
- font-size:11px;
- margin-top:28px;
-}
-
+.taskDesc{color:var(--mut);font-size:12px;margin-top:3px}
+.taskStatus{color:var(--mut);font-size:12px;margin-top:11px;min-height:16px}
+.done .taskStatus{color:#8bff9c}
+.verify{height:3px;margin-top:9px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;display:none}
+.running .verify{display:block}
+.verify i{display:block;height:100%;width:40%;background:linear-gradient(90deg,transparent,var(--a),var(--b),transparent);animation:slide 1.1s ease-in-out infinite}
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+button{position:relative;overflow:hidden;width:100%;padding:13px;border:0;border-radius:11px;background:linear-gradient(135deg,var(--a),var(--b));color:#16090c;font-weight:800;font-size:14px;cursor:pointer;margin-top:11px;transition:transform .15s,filter .2s,box-shadow .2s;font-family:inherit}
+button:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.1);box-shadow:0 8px 22px -8px var(--a)}
+button:active:not(:disabled){transform:scale(.97)}
+button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+button:disabled{opacity:.35;cursor:not-allowed}
+.rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.5);transform:scale(0);animation:rp .6s ease-out forwards;pointer-events:none}
+@keyframes rp{to{transform:scale(4);opacity:0}}
+#claim{margin-top:18px;padding:15px;font-size:15px}
+#claim:not(:disabled){animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--a) 70%,transparent)}100%{box-shadow:0 0 0 18px transparent}}
+#status{color:var(--mut);font-size:13px;margin-top:18px;line-height:1.5;min-height:20px}
+#keyBox{display:none;margin-top:18px;padding:16px;background:rgba(0,0,0,.35);border:1px dashed var(--a);border-radius:12px;overflow-wrap:anywhere;animation:rise .6s both}
+#key{font-family:"Courier New",monospace;font-size:14px;line-height:1.6;color:var(--b);user-select:all}
+.footer{color:#6b5f6b;font-size:11px;margin-top:24px}
 .hidden{display:none!important}
+.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+@media(prefers-reduced-motion:reduce){*,*::before{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
 </style>
 </head>
-
 <body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<canvas id="fx" aria-hidden="true"></canvas>
 
-<div class="card">
-
- <div class="logo">IncrementalUi</div>
- <div class="subtitle">Official Key System</div>
-
- <h2>Complete Tasks</h2>
-
- <p class="description">
- Complete the four steps below to request your 24-hour access key.
- </p>
-
- <div class="progress">
-  <div class="progressBar" id="progressBar"></div>
- </div>
-
- <div id="startArea">
-  <button id="start">Start Tasks</button>
- </div>
-
- <div id="tasksArea" class="hidden">
-
-  <div class="task">
-   <div class="taskTop">
-    <div class="taskTitle">01. Visit YouTube Channel</div>
-    <div id="status1">1/4</div>
-   </div>
-
-   <div class="taskDesc">
-    Visit our official YouTube channel.
-   </div>
-
-   <div class="timer" id="timer1">00:15</div>
-
-   <div class="taskStatus" id="taskStatus1">
-    Waiting to start.
-   </div>
-
-   <button id="channelButton">
-    Open Channel & Start Timer
-   </button>
-  </div>
-
-  <div class="task">
-   <div class="taskTop">
-    <div class="taskTitle">02. Visit YouTube Video</div>
-    <div id="status2">2/4</div>
-   </div>
-
-   <div class="taskDesc">
-    Visit our official IncrementalUi video.
-   </div>
-
-   <div class="timer" id="timer2">00:30</div>
-
-   <div class="taskStatus" id="taskStatus2">
-    Complete Task 1 first.
-   </div>
-
-   <button id="videoButton" disabled>
-    Open Video & Start Timer
-   </button>
-  </div>
-
-  <div class="task">
-   <div class="taskTop">
-    <div class="taskTitle">03. Complete Linkvertise</div>
-    <div id="status3">3/4</div>
-   </div>
-
-   <div class="taskDesc">
-    Open our monetized Linkvertise link and complete its available steps.
-   </div>
-
-   <div class="taskStatus" id="taskStatus3">
-    Complete Task 2 first.
-   </div>
-
-   <button id="linkvertiseButton" disabled>
-    Open Linkvertise
-   </button>
-
-   <button id="linkDoneButton" class="secondary hidden">
-    I've completed this task
-   </button>
-  </div>
-
-  <div class="task">
-   <div class="taskTop">
-    <div class="taskTitle">04. Join Discord</div>
-    <div id="status4">4/4</div>
-   </div>
-
-   <div class="taskDesc">
-    Join the official IncrementalUi Discord community.
-   </div>
-
-   <div class="taskStatus" id="taskStatus4">
-    Complete Task 3 first.
-   </div>
-
-   <button id="discordButton" disabled>
-    Open Discord Invite
-   </button>
-
-   <button id="discordDoneButton" class="secondary hidden">
-    I've joined Discord
-   </button>
-  </div>
-
-  <button id="claim" disabled>
-   Generate 24-Hour Key
-  </button>
-
- </div>
-
- <div id="status">
-  Press Start Tasks to begin.
- </div>
-
- <div id="keyBox">
-  <p>Your access key:</p>
-  <div id="key"></div>
-  <br>
-  <button id="copy">Copy Key</button>
- </div>
-
- <div class="footer">
-  IncrementalUi &copy; 2026
- </div>
-
+<div class="bar" role="toolbar" aria-label="Appearance">
+ <button class="dot" data-t="ember" style="--c1:#ff5e3a;--c2:#ffb347" aria-label="Ember theme"></button>
+ <button class="dot" data-t="ocean" style="--c1:#22d3ee;--c2:#6366f1" aria-label="Ocean theme"></button>
+ <button class="dot" data-t="toxic" style="--c1:#4ade80;--c2:#d9f99d" aria-label="Toxic theme"></button>
+ <button class="dot" data-t="orchid" style="--c1:#e879f9;--c2:#818cf8" aria-label="Orchid theme"></button>
+ <button id="fxb" aria-label="Change background effect"></button>
+ <button id="snd" aria-label="Toggle sound" aria-pressed="true">🔊</button>
 </div>
 
+<main class="card" id="card">
+ <div class="logo">IncrementalUi</div>
+ <div class="subtitle">Official Key System</div>
+ <h2>Unlock your key</h2>
+ <p class="description">Finish the four steps to get a free 24-hour access key.</p>
+ <div class="progress"><div class="progressBar" id="progressBar"></div></div>
+
+ <div id="startArea"><button id="start">Start tasks</button></div>
+ <div id="tasksArea" class="hidden"></div>
+
+ <div id="status" aria-live="polite">Press Start tasks to begin.</div>
+
+ <div id="keyBox">
+  <p style="margin:0 0 8px;color:var(--mut);font-size:13px">Your access key</p>
+  <div id="key"></div>
+  <button id="copy">Copy key</button>
+ </div>
+ <div class="footer">IncrementalUi &copy; 2026</div>
+</main>
+
 <script>
-const API_URL =
- "https://incrementalui-keys.diegoawan23.workers.dev";
+const API_URL="https://incrementalui-keys.diegoawan23.workers.dev";
+const STORAGE_KEY="incrementalui_task_session";
+// wait = hidden verification delay (seconds), confirm = needs "I finished" click, tab = open in same tab
+const STEPS=[
+ {ico:"▶",title:"Visit YouTube channel",desc:"Open our official channel.",url:"https://www.youtube.com/@IncrementalScrips",wait:15,btn:"Open channel",run:"Verifying visit…"},
+ {ico:"🎬",title:"Watch the video",desc:"Open our IncrementalUi video.",url:"https://youtu.be/NbvLSUvbQRo?si=g4F9Y81NwrwOVaDC",wait:30,btn:"Open video",run:"Verifying watch…"},
+ {ico:"🔗",title:"Complete Linkvertise",desc:"Finish the Linkvertise steps, then come back.",url:"https://link-center.net/8008243/oGyJbUADMuHD",wait:8,confirm:true,tab:true,btn:"Open Linkvertise",run:"Waiting for you to finish…",ok:"I completed this"},
+ {ico:"💬",title:"Join Discord",desc:"Join the IncrementalUi community.",url:"https://discord.gg/BGUQc9qqNM",wait:10,confirm:true,btn:"Open Discord invite",run:"Waiting for you to join…",ok:"I joined Discord"}
+];
+const $=id=>document.getElementById(id);
+let S={challenge:null,done:[0,0,0,0],started:[0,0,0,0]};
+let busy=false;
 
-const CHANNEL_URL =
- "https://www.youtube.com/@IncrementalScrips";
+/* ---------- storage ---------- */
+function save(){try{sessionStorage.setItem(STORAGE_KEY,JSON.stringify(S))}catch(e){}}
+function load(){
+ try{
+  const s=JSON.parse(sessionStorage.getItem(STORAGE_KEY));
+  if(s&&typeof s.challenge==="string"&&Array.isArray(s.done)&&s.done.length===4&&Array.isArray(s.started)&&s.started.length===4){
+   S={challenge:s.challenge,done:s.done.map(Number),started:s.started.map(Number)};return true}
+ }catch(e){}
+ return false;
+}
+function pref(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 
-const VIDEO_URL =
- "https://youtu.be/NbvLSUvbQRo?si=g4F9Y81NwrwOVaDC";
-
-const LINKVERTISE_URL =
- "https://link-center.net/8008243/oGyJbUADMuHD";
-
-const DISCORD_URL =
- "https://discord.gg/BGUQc9qqNM";
-
-const $ = id => document.getElementById(id);
-
-let challenge = null;
-let completed = [false,false,false,false];
-let timerRunning = false;
-
+/* ---------- network ---------- */
 async function post(path,data={}){
- const response = await fetch(API_URL + path,{
-  method:"POST",
-  headers:{
-   "Content-Type":"application/json"
-  },
-  body:JSON.stringify(data)
- });
-
- const result = await response.json();
-
- if(!response.ok){
-  throw new Error(
-   result.error || "Request failed"
-  );
- }
-
- return result;
+ let r;
+ try{r=await fetch(API_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})}
+ catch(e){throw new Error("Can't reach the server. Check your connection and try again.")}
+ let j={};
+ try{j=await r.json()}catch(e){}
+ if(!r.ok)throw new Error(j.error||"Request failed ("+r.status+")");
+ return j;
 }
 
-function updateProgress(){
- const count = completed.filter(Boolean).length;
+/* ---------- sound (WebAudio, no files) ---------- */
+let AC=null,soundOn=pref("sound")!=="off";
+function tone(f,d=.12,type="sine",v=.06,delay=0){
+ if(!soundOn)return;
+ try{
+  AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d);
+ }catch(e){}
+}
+const sfx={
+ click:()=>tone(520,.07,"triangle"),
+ done:()=>{tone(660,.12,"sine",.07);tone(880,.18,"sine",.07,.1)},
+ win:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.25,"triangle",.07,i*.09)),
+ err:()=>{tone(180,.2,"sawtooth",.05)}
+};
 
- $("progressBar").style.width =
-  (count / 4 * 100) + "%";
+/* ---------- themes ---------- */
+function setTheme(t){
+ document.documentElement.dataset.theme=t;pref("theme",t);
+ document.querySelectorAll(".dot").forEach(d=>d.classList.toggle("on",d.dataset.t===t));
+ readColors();
+}
+document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>{setTheme(d.dataset.t);sfx.click()});
+$("snd").onclick=()=>{soundOn=!soundOn;pref("sound",soundOn?"on":"off");$("snd").textContent=soundOn?"🔊":"🔇";$("snd").setAttribute("aria-pressed",soundOn);sfx.click()};
+$("snd").textContent=soundOn?"🔊":"🔇";
 
- $("status1").textContent =
-  completed[0] ? "DONE" : "1/4";
+/* ---------- background: WebGL plasma + 4 switchable canvas worlds ---------- */
+const cv=$("fx"),cx=cv.getContext("2d"),gc=$("gl");
+const GS=.55; // shader resolution scale (perf)
+let W,H,parts=[],stars=[],drops=[],conf=[],trail=[],tNow=0;
+let cA="#ff5e3a",cB="#ffb347",rgbA=[1,.37,.23],rgbB=[1,.7,.28],rgbBG=[.04,.03,.06];
+let mouse={x:-1e3,y:-1e3},sm={x:0,y:0},shock={x:0,y:0,t:-100},boost=0,warp=1;
+const MODES=["nebula","network","warp","matrix"],ICONS=["🌌","🕸","🚀","🟩"];
+let mode=Math.max(0,MODES.indexOf(pref("fx")));
+const still=matchMedia("(prefers-reduced-motion:reduce)").matches;
+const hex=h=>{h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255)};
+function readColors(){
+ const s=getComputedStyle(document.documentElement);
+ cA=s.getPropertyValue("--a").trim();cB=s.getPropertyValue("--b").trim();
+ rgbA=hex(cA);rgbB=hex(cB);rgbBG=hex(s.getPropertyValue("--bg").trim());
+}
+const FS=`
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 R,M,SP;uniform float T,B,ST;uniform vec3 A,C,BG;
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p=p*2.02+vec2(1.7,9.2);a*=.5;}return v;}
+void main(){
+ vec2 uv=gl_FragCoord.xy/R;
+ vec2 p=(gl_FragCoord.xy-.5*R)/R.y;
+ vec2 m=(M-.5*R)/R.y, s=(SP-.5*R)/R.y;
+ float d=length(p-m);
+ p+=(p-m)*.18*exp(-d*4.);                         // cursor lens
+ float sd=length(p-s),age=T-ST;
+ float ring=exp(-pow((sd-age*.7)*12.,2.))*exp(-age*1.4);
+ p+=normalize(p-s+1e-4)*ring*.06;                 // click shockwave
+ float t=T*.12;
+ vec2 q=vec2(fbm(p*2.+t),fbm(p*2.+vec2(5.2,1.3)-t));
+ vec2 r=vec2(fbm(p*2.+4.*q+vec2(1.7,9.2)+t*1.5),fbm(p*2.+4.*q+vec2(8.3,2.8)-t*1.2));
+ float f=fbm(p*2.+4.*r);                          // domain-warped plasma
+ vec3 col=mix(BG,A,smoothstep(.2,.85,f)*(.5+B*.7));
+ col=mix(col,C,smoothstep(.4,1.,length(q))*.55*(.5+B));
+ col+=A*ring*.7+C*exp(-d*5.)*.2;
+ float fil=pow(1.-abs(f-.5)*2.,8.);               // glowing filaments
+ col+=C*fil*(.12+B*.3);
+ col*=1.-dot(uv-.5,uv-.5)*1.1;
+ gl_FragColor=vec4(col,1.);
+}`;
+let gl=null;const U={};
+try{
+ gl=gc.getContext("webgl",{antialias:false});
+ const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o};
+ const pr=gl.createProgram();
+ gl.attachShader(pr,sh(gl.VERTEX_SHADER,"attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}"));
+ gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);
+ if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw 0;
+ gl.useProgram(pr);
+ gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());
+ gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+ const l=gl.getAttribLocation(pr,"p");gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,2,gl.FLOAT,false,0,0);
+ ["R","M","SP","T","B","ST","A","C","BG"].forEach(k=>U[k]=gl.getUniformLocation(pr,k));
+}catch(e){gl=null;gc.style.display="none"}
 
- $("status2").textContent =
-  completed[1] ? "DONE" : "2/4";
+function resize(){
+ const d=devicePixelRatio||1;W=innerWidth;H=innerHeight;
+ cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0);
+ gc.width=Math.ceil(W*GS);gc.height=Math.ceil(H*GS);
+ parts=Array.from({length:Math.min(80,Math.floor(W*H/13000))},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.6,vy:(Math.random()-.5)*.6,r:Math.random()*2+.8,c:Math.random()>.5,p:Math.random()*6.28}));
+ stars=Array.from({length:220},()=>({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()*.95+.05}));
+ drops=Array.from({length:Math.ceil(W/16)},()=>({h:-Math.random()*30,v:Math.random()*10+6}));
+}
+addEventListener("resize",resize);
+addEventListener("pointermove",e=>{
+ mouse.x=e.clientX;mouse.y=e.clientY;
+ trail.push({x:e.clientX,y:e.clientY,l:1});if(trail.length>36)trail.shift();
+ const r=$("card").getBoundingClientRect();
+ $("card").style.setProperty("--mx",(e.clientX-r.left)+"px");
+ $("card").style.setProperty("--my",(e.clientY-r.top)+"px");
+});
+addEventListener("pointerdown",e=>{shock={x:e.clientX*GS,y:(H-e.clientY)*GS,t:tNow};warp=14});
+function burst(x,y,n=90){
+ for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*9+3;
+  conf.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-5,r:Math.random()*5+2,c:Math.random()>.5?cA:cB,l:1,rot:Math.random()*6})}
+}
+const LAYERS={
+ nebula(t){
+  for(const p of parts){
+   if(!still){p.y-=.3+p.r*.12;p.x+=Math.sin(t+p.p)*.35}
+   if(p.y<-5){p.y=H+5;p.x=Math.random()*W}
+   const dx=p.x-mouse.x,dy=p.y-mouse.y,nr=Math.max(0,1-Math.hypot(dx,dy)/150);
+   cx.globalAlpha=.3+nr*.7;cx.fillStyle=p.c?cA:cB;
+   cx.beginPath();cx.arc(p.x+dx*nr*.25,p.y+dy*nr*.25,p.r+nr*2.5,0,6.28);cx.fill();
+  }
+ },
+ network(){
+  cx.lineWidth=1;
+  for(let i=0;i<parts.length;i++){
+   const p=parts[i];
+   if(!still){p.x+=p.vx;p.y+=p.vy}
+   if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+   const md=Math.hypot(p.x-mouse.x,p.y-mouse.y);
+   if(md<180){p.x+=(mouse.x-p.x)*.012;p.y+=(mouse.y-p.y)*.012;
+    cx.globalAlpha=(1-md/180)*.8;cx.strokeStyle=cB;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(mouse.x,mouse.y);cx.stroke()}
+   for(let j=i+1;j<parts.length;j++){
+    const q=parts[j],d=Math.hypot(p.x-q.x,p.y-q.y);
+    if(d<130){cx.globalAlpha=(1-d/130)*.5;cx.strokeStyle=cA;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke()}
+   }
+   cx.globalAlpha=.9;cx.fillStyle=p.c?cA:cB;cx.beginPath();cx.arc(p.x,p.y,p.r+1,0,6.28);cx.fill();
+  }
+ },
+ warp(){
+  warp+=(1-warp)*.04;
+  const sp=.006*(warp+boost*2),ox=W/2+(mouse.x>0?(mouse.x-W/2)*.2:0),oy=H/2+(mouse.y>0?(mouse.y-H/2)*.2:0),k=Math.max(W,H)*.5;
+  for(const s of stars){
+   const pz=s.z;s.z-=sp;
+   if(s.z<=.02){s.x=Math.random()*2-1;s.y=Math.random()*2-1;s.z=1;continue}
+   const x1=ox+s.x/s.z*k*.5,y1=oy+s.y/s.z*k*.5,x0=ox+s.x/(pz+sp*.6)*k*.5,y0=oy+s.y/(pz+sp*.6)*k*.5;
+   cx.globalAlpha=Math.min(1,(1-s.z)*1.4);cx.strokeStyle=s.x>0?cA:cB;cx.lineWidth=(1-s.z)*2.6+.4;
+   cx.beginPath();cx.moveTo(x0,y0);cx.lineTo(x1,y1);cx.stroke();
+  }
+ },
+ matrix(t){
+  const ch="01アイウエオカキクケコサシスセソ<>/{}$#=+",F=16,L=14;
+  cx.font=F+"px monospace";
+  for(let i=0;i<drops.length;i++){
+   const d=drops[i];if(!still)d.h+=d.v*.016;
+   if((d.h-L)*F>H){d.h=-Math.random()*20;d.v=Math.random()*10+6}
+   for(let k=0;k<L;k++){
+    const row=Math.floor(d.h)-k;if(row<0)continue;
+    cx.globalAlpha=(1-k/L)*.75;cx.fillStyle=k===0?"#fff":(i%3?cA:cB);
+    cx.fillText(ch[(row*31+i*17+Math.floor(t*(k?1:9)))%ch.length],i*F,row*F);
+   }
+  }
+ }
+};
+function frame(ms){
+ tNow=still?5:ms/1000;
+ const count=S.done.filter(Boolean).length;
+ boost+=(count/4-boost)*.03;
+ sm.x+=(mouse.x-sm.x)*.08;sm.y+=(mouse.y-sm.y)*.08;
+ if(gl){
+  gl.viewport(0,0,gc.width,gc.height);
+  gl.uniform2f(U.R,gc.width,gc.height);
+  gl.uniform2f(U.M,sm.x*GS,(H-sm.y)*GS);
+  gl.uniform2f(U.SP,shock.x,shock.y);
+  gl.uniform1f(U.T,tNow);gl.uniform1f(U.B,boost);gl.uniform1f(U.ST,shock.t);
+  gl.uniform3fv(U.A,rgbA);gl.uniform3fv(U.C,rgbB);gl.uniform3fv(U.BG,rgbBG);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+ }
+ cx.clearRect(0,0,W,H);
+ LAYERS[MODES[mode]](tNow);
+ cx.lineWidth=1;
+ for(let i=trail.length-1;i>=0;i--){ // glowing cursor trail
+  const p=trail[i];p.l-=.045;if(p.l<=0){trail.splice(i,1);continue}
+  cx.globalAlpha=p.l*.6;cx.fillStyle=cB;cx.beginPath();cx.arc(p.x,p.y,p.l*5,0,6.28);cx.fill();
+ }
+ for(let i=conf.length-1;i>=0;i--){
+  const c=conf[i];c.x+=c.vx;c.y+=c.vy;c.vy+=.35;c.vx*=.99;c.l-=.012;c.rot+=.2;
+  if(c.l<=0){conf.splice(i,1);continue}
+  cx.globalAlpha=c.l;cx.fillStyle=c.c;cx.save();cx.translate(c.x,c.y);cx.rotate(c.rot);cx.fillRect(-c.r,-c.r/2,c.r*2,c.r);cx.restore();
+ }
+ cx.globalAlpha=1;
+ requestAnimationFrame(frame);
+}
+function setFx(i){mode=i;pref("fx",MODES[i]);$("fxb").textContent=ICONS[i];$("fxb").title=$("fxb").ariaLabel="Background: "+MODES[i]}
+$("fxb").onclick=()=>{setFx((mode+1)%MODES.length);sfx.click();shock={x:gc.width/2,y:gc.height/2,t:tNow}};
+setFx(mode);
 
- $("status3").textContent =
-  completed[2] ? "DONE" : "3/4";
+/* ---------- ripple ---------- */
+document.addEventListener("pointerdown",e=>{
+ const b=e.target.closest("button");if(!b||b.disabled||b.classList.contains("dot"))return;
+ const r=b.getBoundingClientRect(),s=document.createElement("span"),z=Math.max(r.width,r.height);
+ s.className="rip";s.style.cssText=`width:${z}px;height:${z}px;left:${e.clientX-r.left-z/2}px;top:${e.clientY-r.top-z/2}px`;
+ b.appendChild(s);setTimeout(()=>s.remove(),600);
+});
 
- $("status4").textContent =
-  completed[3] ? "DONE" : "4/4";
+/* ---------- task UI ---------- */
+function build(){
+ $("tasksArea").innerHTML=STEPS.map((s,i)=>`
+  <div class="task locked" id="task${i}">
+   <div class="taskTop"><div class="ico" id="ico${i}">${s.ico}</div>
+    <div><div class="taskTitle">${s.title}</div><div class="taskDesc">${s.desc}</div></div></div>
+   <div class="verify"><i></i></div>
+   <div class="taskStatus" id="st${i}"></div>
+   <button id="btn${i}" data-i="${i}"></button>
+  </div>`).join("")+`<button id="claim" disabled>Generate 24-hour key</button>`;
+ document.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>stepClick(+b.dataset.i));
+ $("claim").onclick=claim;
+}
+function active(){return S.done.indexOf(0)}
 
- if(count === 4){
-  $("claim").disabled = false;
-  $("status").textContent =
-   "All tasks completed! You can now request your key.";
+function render(){
+ const act=active(),count=S.done.filter(Boolean).length;
+ $("progressBar").style.width=(count/4*100)+"%";
+ STEPS.forEach((s,i)=>{
+  const el=$("task"+i),btn=$("btn"+i),st=$("st"+i);if(!el)return;
+  const done=!!S.done[i],isAct=i===act,started=S.started[i]>0;
+  const waited=started&&(Date.now()-S.started[i])/1000>=s.wait;
+  el.className="task "+(done?"done":isAct?"active":"locked")+(isAct&&started&&!waited?" running":"");
+  if(done){$("ico"+i).textContent="✓";btn.classList.add("hidden");st.textContent="Completed";return}
+  if(!isAct){btn.disabled=true;btn.textContent=s.btn;st.textContent="Finish the previous step first.";return}
+  if(!started){btn.disabled=false;btn.textContent=s.btn;st.textContent="Ready when you are.";return}
+  if(!waited){btn.disabled=true;btn.textContent="Verifying…";st.textContent=s.run;return}
+  if(s.confirm){btn.disabled=false;btn.textContent=s.ok;st.textContent="Confirm once you're done.";return}
+  complete(i); // auto-complete step
+ });
+ const claim=$("claim");
+ if(claim&&!claim.classList.contains("hidden")){
+  const ready=count===4&&!busy;
+  if(claim.disabled&&ready)sfx.win();
+  claim.disabled=!ready;
+  if(count===4&&!$("keyBox").style.display.includes("block"))$("status").textContent="All done. Generate your key.";
+ }
+}
+function complete(i){
+ if(S.done[i])return;
+ S.done[i]=1;save();sfx.done();
+ const r=$("task"+i).getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,24);
+ render();
+}
+function stepClick(i){
+ if(i!==active())return;
+ sfx.click();
+ const s=STEPS[i];
+ if(!S.started[i]){
+  S.started[i]=Date.now();save();
+  if(s.tab){location.href=s.url;return}
+  window.open(s.url,"_blank","noopener,noreferrer");
+  render();
+ }else if(s.confirm){
+  complete(i);
  }
 }
 
 async function startTasks(){
- $("start").disabled = true;
- $("status").textContent =
-  "Creating your secure session...";
-
+ $("start").disabled=true;$("status").textContent="Creating your session…";sfx.click();
  try{
-  const result = await post("/api/start");
-
-  challenge = result.challenge;
-
+  const r=await post("/api/start");
+  S={challenge:r.challenge,done:[0,0,0,0],started:[0,0,0,0]};save();
   $("startArea").classList.add("hidden");
-  $("tasksArea").classList.remove("hidden");
-
-  $("status").textContent =
-   "Start with Task 1.";
-
- }catch(error){
-  $("start").disabled = false;
-  $("status").textContent = error.message;
- }
+  build();$("tasksArea").classList.remove("hidden");
+  $("status").textContent="Start with the first task.";
+  render();
+ }catch(e){$("start").disabled=false;$("status").textContent=e.message;sfx.err();$("card").classList.add("shake");setTimeout(()=>$("card").classList.remove("shake"),400)}
 }
+$("start").onclick=startTasks;
 
-function runTimer(seconds,display,button,status,callback){
- if(timerRunning) return;
-
- timerRunning = true;
- button.disabled = true;
-
- let remaining = seconds;
-
- function show(){
-  display.textContent =
-   "00:" + String(remaining).padStart(2,"0");
- }
-
- show();
-
- const interval = setInterval(()=>{
-  remaining--;
-  show();
-
-  if(remaining <= 0){
-   clearInterval(interval);
-   timerRunning = false;
-
-   status.textContent = "Completed!";
-   status.classList.add("done");
-
-   callback();
-  }
- },1000);
-}
-
-$("start").onclick = startTasks;
-
-$("channelButton").onclick = ()=>{
- window.open(CHANNEL_URL,"_blank");
-
- $("taskStatus1").textContent =
-  "Timer running...";
-
- runTimer(
-  15,
-  $("timer1"),
-  $("channelButton"),
-  $("taskStatus1"),
-  ()=>{
-   completed[0] = true;
-
-   $("channelButton").textContent =
-    "Task Completed";
-
-   $("videoButton").disabled = false;
-
-   $("taskStatus2").textContent =
-    "Ready to start.";
-
-   updateProgress();
-  }
- );
-};
-
-$("videoButton").onclick = ()=>{
- window.open(VIDEO_URL,"_blank");
-
- $("taskStatus2").textContent =
-  "Timer running...";
-
- runTimer(
-  30,
-  $("timer2"),
-  $("videoButton"),
-  $("taskStatus2"),
-  ()=>{
-   completed[1] = true;
-
-   $("videoButton").textContent =
-    "Task Completed";
-
-   $("linkvertiseButton").disabled = false;
-
-   $("taskStatus3").textContent =
-    "Ready to start.";
-
-   updateProgress();
-  }
- );
-};
-
-$("linkvertiseButton").onclick = ()=>{
- window.open(LINKVERTISE_URL,"_blank");
-
- $("linkvertiseButton").classList.add("hidden");
- $("linkDoneButton").classList.remove("hidden");
-
- $("taskStatus3").textContent =
-  "Link opened. Complete its steps before continuing.";
-};
-
-$("linkDoneButton").onclick = ()=>{
- completed[2] = true;
-
- $("linkDoneButton").disabled = true;
- $("linkDoneButton").textContent =
-  "Task Completed";
-
- $("taskStatus3").textContent =
-  "Marked complete. Linkvertise completion is not server-verified.";
-
- $("discordButton").disabled = false;
-
- $("taskStatus4").textContent =
-  "Ready to start.";
-
- updateProgress();
-};
-
-$("discordButton").onclick = ()=>{
- window.open(DISCORD_URL,"_blank");
-
- $("discordButton").classList.add("hidden");
- $("discordDoneButton").classList.remove("hidden");
-};
-
-$("discordDoneButton").onclick = ()=>{
- completed[3] = true;
-
- $("discordDoneButton").disabled = true;
- $("discordDoneButton").textContent =
-  "Task Completed";
-
- $("taskStatus4").textContent =
-  "Marked complete. Discord membership is not server-verified.";
-
- updateProgress();
-};
-
-$("claim").onclick = async ()=>{
- if(completed.some(value=>!value)){
-  $("status").textContent =
-   "Please complete all four tasks first.";
-  return;
- }
-
- $("claim").disabled = true;
- $("status").textContent =
-  "Generating your 24-hour key...";
-
+async function claim(){
+ if(S.done.some(v=>!v)||busy)return;
+ busy=true;$("claim").disabled=true;$("status").textContent="Generating your key…";
  try{
-  const result = await post("/api/claim",{
-   challenge:challenge
-  });
-
-  $("key").textContent = result.key;
-  $("keyBox").style.display = "block";
-
+  const r=await post("/api/claim",{challenge:S.challenge});
   $("claim").classList.add("hidden");
-
-  $("status").textContent =
-   "Your key is ready!";
-
- }catch(error){
-  $("claim").disabled = false;
-  $("status").textContent = error.message;
+  $("keyBox").style.display="block";
+  scramble($("key"),String(r.key));
+  try{sessionStorage.removeItem(STORAGE_KEY)}catch(e){}
+  $("status").textContent="Your key is ready!";
+  sfx.win();const b=$("keyBox").getBoundingClientRect();burst(b.left+b.width/2,b.top,140);
+ }catch(e){
+  busy=false;$("claim").disabled=false;$("status").textContent=e.message;sfx.err();
+  $("card").classList.add("shake");setTimeout(()=>$("card").classList.remove("shake"),400);
  }
+}
+function scramble(el,text){
+ const chars="ABCDEF0123456789-_";let n=0;
+ if(still){el.textContent=text;return}
+ const iv=setInterval(()=>{
+  el.textContent=text.split("").map((c,i)=>i<n||c==="-"?c:chars[Math.random()*chars.length|0]).join("");
+  n+=Math.max(1,text.length/28);if(n>=text.length){el.textContent=text;clearInterval(iv)}
+ },40);
+}
+$("copy").onclick=async()=>{
+ sfx.click();
+ try{await navigator.clipboard.writeText($("key").textContent);$("status").textContent="Key copied!";$("copy").textContent="Copied ✓";setTimeout(()=>$("copy").textContent="Copy key",1800)}
+ catch{$("status").textContent="Couldn't copy. Select the key and copy it manually."}
 };
 
-$("copy").onclick = async ()=>{
- try{
-  await navigator.clipboard.writeText(
-   $("key").textContent
-  );
-
-  $("status").textContent = "Key copied!";
- }catch{
-  $("status").textContent =
-   "Please copy the key manually.";
- }
-};
+/* ---------- boot ---------- */
+setTheme(pref("theme")||"ember");
+resize();requestAnimationFrame(frame);
+if(load()&&S.challenge){
+ $("startArea").classList.add("hidden");build();$("tasksArea").classList.remove("hidden");
+ $("status").textContent="Welcome back. Your progress was restored.";
+ render();
+}
+setInterval(()=>{if($("claim"))render()},300);
 </script>
-
 </body>
 </html>
