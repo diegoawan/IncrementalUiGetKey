@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IncrementalUi | Get Key</title>
+
 <style>
 *{box-sizing:border-box}
+
 body{
  margin:0;
  min-height:100vh;
@@ -17,37 +20,112 @@ body{
  color:#fff;
  font-family:Arial,sans-serif;
 }
+
 .card{
  width:100%;
- max-width:420px;
- padding:30px;
+ max-width:440px;
+ padding:26px;
  border:1px solid #292929;
  border-radius:18px;
  background:#111;
  text-align:center;
 }
+
 .logo{font-size:27px;font-weight:800}
 .subtitle{color:#888;font-size:13px;margin-top:8px}
-h2{margin-top:35px;font-size:21px}
-.description{color:#999;font-size:14px;line-height:1.6}
-.timer{
- font-size:48px;
- font-weight:800;
- margin:25px 0;
+
+h2{margin-top:30px;font-size:22px}
+
+.description{
+ color:#999;
+ font-size:14px;
+ line-height:1.6;
 }
+
+.progress{
+ height:6px;
+ background:#292929;
+ border-radius:10px;
+ margin:22px 0;
+ overflow:hidden;
+}
+
+.progressBar{
+ height:100%;
+ width:0%;
+ background:#fff;
+ transition:.3s;
+}
+
+.task{
+ text-align:left;
+ padding:16px;
+ border:1px solid #292929;
+ border-radius:12px;
+ margin-top:12px;
+ background:#151515;
+}
+
+.taskTop{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+}
+
+.taskTitle{font-weight:800;font-size:15px}
+
+.taskDesc{
+ color:#888;
+ font-size:12px;
+ margin-top:7px;
+ line-height:1.5;
+}
+
+.taskStatus{
+ color:#888;
+ font-size:11px;
+ margin-top:10px;
+}
+
+.taskStatus.done{color:#8bff9c}
+
 button{
  width:100%;
- padding:15px;
+ padding:13px;
  border:0;
  border-radius:9px;
  background:#fff;
  color:#000;
  font-weight:800;
- font-size:15px;
+ font-size:14px;
  cursor:pointer;
+ margin-top:13px;
 }
-button:disabled{opacity:.35;cursor:not-allowed}
-#status{color:#aaa;font-size:13px;margin-top:18px}
+
+button:disabled{
+ opacity:.35;
+ cursor:not-allowed;
+}
+
+.secondary{
+ background:#252525;
+ color:#fff;
+}
+
+.timer{
+ font-size:32px;
+ font-weight:800;
+ margin:12px 0;
+}
+
+#status{
+ color:#aaa;
+ font-size:13px;
+ margin-top:18px;
+ line-height:1.5;
+}
+
 #keyBox{
  display:none;
  margin-top:20px;
@@ -56,28 +134,142 @@ button:disabled{opacity:.35;cursor:not-allowed}
  border-radius:9px;
  overflow-wrap:anywhere;
 }
-#key{font-size:13px;line-height:1.6}
-.footer{color:#555;font-size:11px;margin-top:30px}
+
+#key{
+ font-size:13px;
+ line-height:1.6;
+}
+
+.footer{
+ color:#555;
+ font-size:11px;
+ margin-top:28px;
+}
+
+.hidden{display:none!important}
 </style>
 </head>
+
 <body>
+
 <div class="card">
+
  <div class="logo">IncrementalUi</div>
  <div class="subtitle">Official Key System</div>
 
- <h2>Get Your Key</h2>
+ <h2>Complete Tasks</h2>
+
  <p class="description">
- Complete the timer below to generate your 24-hour access key.
+ Complete the four steps below to request your 24-hour access key.
  </p>
 
- <div class="timer" id="timer">00:30</div>
+ <div class="progress">
+  <div class="progressBar" id="progressBar"></div>
+ </div>
 
- <button id="start">Get Key</button>
- <button id="claim" style="display:none" disabled>
- Generate Key
- </button>
+ <div id="startArea">
+  <button id="start">Start Tasks</button>
+ </div>
 
- <div id="status">Press Get Key to begin.</div>
+ <div id="tasksArea" class="hidden">
+
+  <div class="task">
+   <div class="taskTop">
+    <div class="taskTitle">01. Visit YouTube Channel</div>
+    <div id="status1">1/4</div>
+   </div>
+
+   <div class="taskDesc">
+    Visit our official YouTube channel.
+   </div>
+
+   <div class="timer" id="timer1">00:15</div>
+
+   <div class="taskStatus" id="taskStatus1">
+    Waiting to start.
+   </div>
+
+   <button id="channelButton">
+    Open Channel & Start Timer
+   </button>
+  </div>
+
+  <div class="task">
+   <div class="taskTop">
+    <div class="taskTitle">02. Visit YouTube Video</div>
+    <div id="status2">2/4</div>
+   </div>
+
+   <div class="taskDesc">
+    Visit our official IncrementalUi video.
+   </div>
+
+   <div class="timer" id="timer2">00:30</div>
+
+   <div class="taskStatus" id="taskStatus2">
+    Complete Task 1 first.
+   </div>
+
+   <button id="videoButton" disabled>
+    Open Video & Start Timer
+   </button>
+  </div>
+
+  <div class="task">
+   <div class="taskTop">
+    <div class="taskTitle">03. Complete Linkvertise</div>
+    <div id="status3">3/4</div>
+   </div>
+
+   <div class="taskDesc">
+    Open our monetized Linkvertise link and complete its available steps.
+   </div>
+
+   <div class="taskStatus" id="taskStatus3">
+    Complete Task 2 first.
+   </div>
+
+   <button id="linkvertiseButton" disabled>
+    Open Linkvertise
+   </button>
+
+   <button id="linkDoneButton" class="secondary hidden">
+    I've completed this task
+   </button>
+  </div>
+
+  <div class="task">
+   <div class="taskTop">
+    <div class="taskTitle">04. Join Discord</div>
+    <div id="status4">4/4</div>
+   </div>
+
+   <div class="taskDesc">
+    Join the official IncrementalUi Discord community.
+   </div>
+
+   <div class="taskStatus" id="taskStatus4">
+    Complete Task 3 first.
+   </div>
+
+   <button id="discordButton" disabled>
+    Open Discord Invite
+   </button>
+
+   <button id="discordDoneButton" class="secondary hidden">
+    I've joined Discord
+   </button>
+  </div>
+
+  <button id="claim" disabled>
+   Generate 24-Hour Key
+  </button>
+
+ </div>
+
+ <div id="status">
+  Press Start Tasks to begin.
+ </div>
 
  <div id="keyBox">
   <p>Your access key:</p>
@@ -86,104 +278,279 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <button id="copy">Copy Key</button>
  </div>
 
- <div class="footer">IncrementalUi &copy; 2026</div>
+ <div class="footer">
+  IncrementalUi &copy; 2026
+ </div>
+
 </div>
 
 <script>
-const API_URL = "https://incrementalui-keys.diegoawan23.workers.dev";
+const API_URL =
+ "https://incrementalui-keys.diegoawan23.workers.dev";
 
-const timer = document.getElementById("timer");
-const startButton = document.getElementById("start");
-const claimButton = document.getElementById("claim");
-const statusText = document.getElementById("status");
-const keyBox = document.getElementById("keyBox");
-const keyText = document.getElementById("key");
+const CHANNEL_URL =
+ "https://www.youtube.com/@IncrementalScrips";
+
+const VIDEO_URL =
+ "https://youtu.be/NbvLSUvbQRo?si=g4F9Y81NwrwOVaDC";
+
+const LINKVERTISE_URL =
+ "https://link-center.net/8008243/oGyJbUADMuHD";
+
+const DISCORD_URL =
+ "https://discord.gg/BGUQc9qqNM";
+
+const $ = id => document.getElementById(id);
 
 let challenge = null;
-let remaining = 30;
-let interval = null;
+let completed = [false,false,false,false];
+let timerRunning = false;
 
-async function post(path, data = {}) {
- const response = await fetch(API_URL + path, {
-  method: "POST",
-  headers: {"Content-Type":"application/json"},
-  body: JSON.stringify(data)
+async function post(path,data={}){
+ const response = await fetch(API_URL + path,{
+  method:"POST",
+  headers:{
+   "Content-Type":"application/json"
+  },
+  body:JSON.stringify(data)
  });
 
  const result = await response.json();
 
- if (!response.ok) {
-  throw new Error(result.error || "Request failed");
+ if(!response.ok){
+  throw new Error(
+   result.error || "Request failed"
+  );
  }
 
  return result;
 }
 
-function showTime() {
- timer.textContent = "00:" + String(remaining).padStart(2,"0");
+function updateProgress(){
+ const count = completed.filter(Boolean).length;
+
+ $("progressBar").style.width =
+  (count / 4 * 100) + "%";
+
+ $("status1").textContent =
+  completed[0] ? "DONE" : "1/4";
+
+ $("status2").textContent =
+  completed[1] ? "DONE" : "2/4";
+
+ $("status3").textContent =
+  completed[2] ? "DONE" : "3/4";
+
+ $("status4").textContent =
+  completed[3] ? "DONE" : "4/4";
+
+ if(count === 4){
+  $("claim").disabled = false;
+  $("status").textContent =
+   "All tasks completed! You can now request your key.";
+ }
 }
 
-startButton.onclick = async () => {
- startButton.disabled = true;
- statusText.textContent = "Starting timer...";
+async function startTasks(){
+ $("start").disabled = true;
+ $("status").textContent =
+  "Creating your secure session...";
 
- try {
+ try{
   const result = await post("/api/start");
+
   challenge = result.challenge;
-  remaining = 30;
 
-  startButton.style.display = "none";
-  claimButton.style.display = "block";
-  statusText.textContent = "Please wait for the timer.";
+  $("startArea").classList.add("hidden");
+  $("tasksArea").classList.remove("hidden");
 
-  showTime();
+  $("status").textContent =
+   "Start with Task 1.";
 
-  interval = setInterval(() => {
-   remaining--;
-   showTime();
-
-   if (remaining <= 0) {
-    clearInterval(interval);
-    claimButton.disabled = false;
-    statusText.textContent = "Timer completed! Generate your key.";
-   }
-  }, 1000);
-
- } catch (error) {
-  startButton.disabled = false;
-  statusText.textContent = error.message;
+ }catch(error){
+  $("start").disabled = false;
+  $("status").textContent = error.message;
  }
+}
+
+function runTimer(seconds,display,button,status,callback){
+ if(timerRunning) return;
+
+ timerRunning = true;
+ button.disabled = true;
+
+ let remaining = seconds;
+
+ function show(){
+  display.textContent =
+   "00:" + String(remaining).padStart(2,"0");
+ }
+
+ show();
+
+ const interval = setInterval(()=>{
+  remaining--;
+  show();
+
+  if(remaining <= 0){
+   clearInterval(interval);
+   timerRunning = false;
+
+   status.textContent = "Completed!";
+   status.classList.add("done");
+
+   callback();
+  }
+ },1000);
+}
+
+$("start").onclick = startTasks;
+
+$("channelButton").onclick = ()=>{
+ window.open(CHANNEL_URL,"_blank");
+
+ $("taskStatus1").textContent =
+  "Timer running...";
+
+ runTimer(
+  15,
+  $("timer1"),
+  $("channelButton"),
+  $("taskStatus1"),
+  ()=>{
+   completed[0] = true;
+
+   $("channelButton").textContent =
+    "Task Completed";
+
+   $("videoButton").disabled = false;
+
+   $("taskStatus2").textContent =
+    "Ready to start.";
+
+   updateProgress();
+  }
+ );
 };
 
-claimButton.onclick = async () => {
- claimButton.disabled = true;
- statusText.textContent = "Generating your key...";
+$("videoButton").onclick = ()=>{
+ window.open(VIDEO_URL,"_blank");
 
- try {
-  const result = await post("/api/claim", {
-   challenge: challenge
+ $("taskStatus2").textContent =
+  "Timer running...";
+
+ runTimer(
+  30,
+  $("timer2"),
+  $("videoButton"),
+  $("taskStatus2"),
+  ()=>{
+   completed[1] = true;
+
+   $("videoButton").textContent =
+    "Task Completed";
+
+   $("linkvertiseButton").disabled = false;
+
+   $("taskStatus3").textContent =
+    "Ready to start.";
+
+   updateProgress();
+  }
+ );
+};
+
+$("linkvertiseButton").onclick = ()=>{
+ window.open(LINKVERTISE_URL,"_blank");
+
+ $("linkvertiseButton").classList.add("hidden");
+ $("linkDoneButton").classList.remove("hidden");
+
+ $("taskStatus3").textContent =
+  "Link opened. Complete its steps before continuing.";
+};
+
+$("linkDoneButton").onclick = ()=>{
+ completed[2] = true;
+
+ $("linkDoneButton").disabled = true;
+ $("linkDoneButton").textContent =
+  "Task Completed";
+
+ $("taskStatus3").textContent =
+  "Marked complete. Linkvertise completion is not server-verified.";
+
+ $("discordButton").disabled = false;
+
+ $("taskStatus4").textContent =
+  "Ready to start.";
+
+ updateProgress();
+};
+
+$("discordButton").onclick = ()=>{
+ window.open(DISCORD_URL,"_blank");
+
+ $("discordButton").classList.add("hidden");
+ $("discordDoneButton").classList.remove("hidden");
+};
+
+$("discordDoneButton").onclick = ()=>{
+ completed[3] = true;
+
+ $("discordDoneButton").disabled = true;
+ $("discordDoneButton").textContent =
+  "Task Completed";
+
+ $("taskStatus4").textContent =
+  "Marked complete. Discord membership is not server-verified.";
+
+ updateProgress();
+};
+
+$("claim").onclick = async ()=>{
+ if(completed.some(value=>!value)){
+  $("status").textContent =
+   "Please complete all four tasks first.";
+  return;
+ }
+
+ $("claim").disabled = true;
+ $("status").textContent =
+  "Generating your 24-hour key...";
+
+ try{
+  const result = await post("/api/claim",{
+   challenge:challenge
   });
 
-  keyText.textContent = result.key;
-  keyBox.style.display = "block";
-  claimButton.style.display = "none";
-  timer.textContent = "DONE";
-  statusText.textContent = "Your 24-hour key is ready!";
+  $("key").textContent = result.key;
+  $("keyBox").style.display = "block";
 
- } catch (error) {
-  claimButton.disabled = false;
-  statusText.textContent = error.message;
+  $("claim").classList.add("hidden");
+
+  $("status").textContent =
+   "Your key is ready!";
+
+ }catch(error){
+  $("claim").disabled = false;
+  $("status").textContent = error.message;
  }
 };
 
-document.getElementById("copy").onclick = async () => {
- try {
-  await navigator.clipboard.writeText(keyText.textContent);
-  statusText.textContent = "Key copied!";
- } catch {
-  statusText.textContent = "Please copy the key manually.";
+$("copy").onclick = async ()=>{
+ try{
+  await navigator.clipboard.writeText(
+   $("key").textContent
+  );
+
+  $("status").textContent = "Key copied!";
+ }catch{
+  $("status").textContent =
+   "Please copy the key manually.";
  }
 };
 </script>
+
 </body>
 </html>
