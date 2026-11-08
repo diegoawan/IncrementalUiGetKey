@@ -582,9 +582,9 @@ async function verifyLinkvertiseReturn(){
  }
 
  // Remove the hash from the visible URL after saving it in memory.
- const cleanUrl=new URL(location.href);
- cleanUrl.searchParams.delete("hash");
- history.replaceState({},document.title,cleanUrl.pathname+cleanUrl.search+cleanUrl.hash);
+// const cleanUrl=new URL(location.href);
+// cleanUrl.searchParams.delete("hash");
+// history.replaceState({},document.title,cleanUrl.pathname+cleanUrl.search+cleanUrl.hash);
 
  if(!S.challenge||!S.started[2]){
   $("status").textContent="No active Get Key session was found. Please start again.";
