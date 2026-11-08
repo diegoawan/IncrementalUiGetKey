@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" data-theme="ember">
 <head>
@@ -61,7 +62,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .hidden{display:none!important}
 .shake{animation:shake .4s}
 @keyframes shake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
-@media(prefers-reduced-motion:reduce){*,*::before{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -83,12 +84,9 @@ button:disabled{opacity:.35;cursor:not-allowed}
  <h2>Unlock your key</h2>
  <p class="description">Finish the four steps to get a free 24-hour access key.</p>
  <div class="progress"><div class="progressBar" id="progressBar"></div></div>
-
  <div id="startArea"><button id="start">Start tasks</button></div>
  <div id="tasksArea" class="hidden"></div>
-
  <div id="status" aria-live="polite">Press Start tasks to begin.</div>
-
  <div id="keyBox">
   <p style="margin:0 0 8px;color:var(--mut);font-size:13px">Your access key</p>
   <div id="key"></div>
@@ -99,160 +97,235 @@ button:disabled{opacity:.35;cursor:not-allowed}
 
 <script>
 const API_URL="https://incrementalui-keys.diegoawan23.workers.dev";
-const STORAGE_KEY="incrementalui_task_session";
-// wait = hidden verification delay (seconds), confirm = needs "I finished" click, tab = open in same tab
+const STORAGE_KEY="incrementalui_task_session_v2";
+
 const STEPS=[
  {ico:"▶",title:"Visit YouTube channel",desc:"Open our official channel.",url:"https://www.youtube.com/@IncrementalScrips",wait:15,btn:"Open channel",run:"Verifying visit…"},
  {ico:"🎬",title:"Watch the video",desc:"Open our IncrementalUi video.",url:"https://youtu.be/NbvLSUvbQRo?si=g4F9Y81NwrwOVaDC",wait:30,btn:"Open video",run:"Verifying watch…"},
  {ico:"🔗",title:"Complete Linkvertise",desc:"Finish the Linkvertise steps, then come back.",url:"https://link-center.net/8008243/oGyJbUADMuHD",wait:8,confirm:true,tab:true,btn:"Open Linkvertise",run:"Waiting for you to finish…",ok:"I completed this"},
  {ico:"💬",title:"Join Discord",desc:"Join the IncrementalUi community.",url:"https://discord.gg/BGUQc9qqNM",wait:10,confirm:true,btn:"Open Discord invite",run:"Waiting for you to join…",ok:"I joined Discord"}
 ];
+
 const $=id=>document.getElementById(id);
 let S={challenge:null,done:[0,0,0,0],started:[0,0,0,0]};
 let busy=false;
 
-/* ---------- storage ---------- */
-function save(){try{sessionStorage.setItem(STORAGE_KEY,JSON.stringify(S))}catch(e){}}
+function save(){
+ try{
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(S));
+ }catch(e){}
+}
+
 function load(){
  try{
-  const s=JSON.parse(sessionStorage.getItem(STORAGE_KEY));
+  const s=JSON.parse(localStorage.getItem(STORAGE_KEY));
   if(s&&typeof s.challenge==="string"&&Array.isArray(s.done)&&s.done.length===4&&Array.isArray(s.started)&&s.started.length===4){
-   S={challenge:s.challenge,done:s.done.map(Number),started:s.started.map(Number)};return true}
+   S={challenge:s.challenge,done:s.done.map(Number),started:s.started.map(Number)};
+   return true;
+  }
  }catch(e){}
  return false;
 }
-function pref(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
 
-/* ---------- network ---------- */
+function pref(k,v){
+ try{
+  if(v===undefined)return localStorage.getItem(k);
+  localStorage.setItem(k,v);
+ }catch(e){return null}
+}
+
 async function post(path,data={}){
  let r;
- try{r=await fetch(API_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})}
- catch(e){throw new Error("Can't reach the server. Check your connection and try again.")}
+ try{
+  r=await fetch(API_URL+path,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify(data)
+  });
+ }catch(e){
+  throw new Error("Can't reach the server. Check your connection and try again.");
+ }
  let j={};
  try{j=await r.json()}catch(e){}
  if(!r.ok)throw new Error(j.error||"Request failed ("+r.status+")");
  return j;
 }
 
-/* ---------- sound (WebAudio, no files) ---------- */
 let AC=null,soundOn=pref("sound")!=="off";
+
 function tone(f,d=.12,type="sine",v=.06,delay=0){
  if(!soundOn)return;
  try{
-  AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  AC=AC||new(window.AudioContext||window.webkitAudioContext)();
   const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();
   o.type=type;o.frequency.setValueAtTime(f,t);
-  g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
-  o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d);
+  g.gain.setValueAtTime(v,t);
+  g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g).connect(AC.destination);
+  o.start(t);o.stop(t+d);
  }catch(e){}
 }
+
 const sfx={
  click:()=>tone(520,.07,"triangle"),
  done:()=>{tone(660,.12,"sine",.07);tone(880,.18,"sine",.07,.1)},
  win:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.25,"triangle",.07,i*.09)),
- err:()=>{tone(180,.2,"sawtooth",.05)}
+ err:()=>tone(180,.2,"sawtooth",.05)
 };
 
-/* ---------- themes ---------- */
 function setTheme(t){
- document.documentElement.dataset.theme=t;pref("theme",t);
+ document.documentElement.dataset.theme=t;
+ pref("theme",t);
  document.querySelectorAll(".dot").forEach(d=>d.classList.toggle("on",d.dataset.t===t));
  readColors();
 }
-document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>{setTheme(d.dataset.t);sfx.click()});
-$("snd").onclick=()=>{soundOn=!soundOn;pref("sound",soundOn?"on":"off");$("snd").textContent=soundOn?"🔊":"🔇";$("snd").setAttribute("aria-pressed",soundOn);sfx.click()};
+
+document.querySelectorAll(".dot").forEach(d=>d.onclick=()=>{
+ setTheme(d.dataset.t);sfx.click();
+});
+
+$("snd").onclick=()=>{
+ soundOn=!soundOn;
+ pref("sound",soundOn?"on":"off");
+ $("snd").textContent=soundOn?"🔊":"🔇";
+ $("snd").setAttribute("aria-pressed",soundOn);
+ sfx.click();
+};
 $("snd").textContent=soundOn?"🔊":"🔇";
 
-/* ---------- background: WebGL plasma + 4 switchable canvas worlds ---------- */
 const cv=$("fx"),cx=cv.getContext("2d"),gc=$("gl");
-const GS=.55; // shader resolution scale (perf)
-let W,H,parts=[],stars=[],drops=[],conf=[],trail=[],tNow=0;
+const GS=.55;
+let W,H,parts=[],stars=[],drops=[],trail=[],tNow=0;
 let cA="#ff5e3a",cB="#ffb347",rgbA=[1,.37,.23],rgbB=[1,.7,.28],rgbBG=[.04,.03,.06];
 let mouse={x:-1e3,y:-1e3},sm={x:0,y:0},shock={x:0,y:0,t:-100},boost=0,warp=1;
 const MODES=["nebula","network","warp","matrix"],ICONS=["🌌","🕸","🚀","🟩"];
 let mode=Math.max(0,MODES.indexOf(pref("fx")));
 const still=matchMedia("(prefers-reduced-motion:reduce)").matches;
-const hex=h=>{h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255)};
+
+const hex=h=>{
+ h=h.replace("#","");
+ return[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255);
+};
+
 function readColors(){
  const s=getComputedStyle(document.documentElement);
- cA=s.getPropertyValue("--a").trim();cB=s.getPropertyValue("--b").trim();
+ cA=s.getPropertyValue("--a").trim();
+ cB=s.getPropertyValue("--b").trim();
  rgbA=hex(cA);rgbB=hex(cB);rgbBG=hex(s.getPropertyValue("--bg").trim());
 }
+
 const FS=`
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
 #else
 precision mediump float;
 #endif
-uniform vec2 R,M,SP;uniform float T,B,ST;uniform vec3 A,C,BG;
+uniform vec2 R,M,SP;
+uniform float T,B,ST;
+uniform vec3 A,C,BG;
 float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
- return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}
+return mix(mix(h(i),h(i+vec2(1.,0.)),f.x),mix(h(i+vec2(0.,1.)),h(i+vec2(1.,1.)),f.x),f.y);}
 float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p=p*2.02+vec2(1.7,9.2);a*=.5;}return v;}
 void main(){
- vec2 uv=gl_FragCoord.xy/R;
- vec2 p=(gl_FragCoord.xy-.5*R)/R.y;
- vec2 m=(M-.5*R)/R.y, s=(SP-.5*R)/R.y;
- float d=length(p-m);
- p+=(p-m)*.18*exp(-d*4.);                         // cursor lens
- float sd=length(p-s),age=T-ST;
- float ring=exp(-pow((sd-age*.7)*12.,2.))*exp(-age*1.4);
- p+=normalize(p-s+1e-4)*ring*.06;                 // click shockwave
- float t=T*.12;
- vec2 q=vec2(fbm(p*2.+t),fbm(p*2.+vec2(5.2,1.3)-t));
- vec2 r=vec2(fbm(p*2.+4.*q+vec2(1.7,9.2)+t*1.5),fbm(p*2.+4.*q+vec2(8.3,2.8)-t*1.2));
- float f=fbm(p*2.+4.*r);                          // domain-warped plasma
- vec3 col=mix(BG,A,smoothstep(.2,.85,f)*(.5+B*.7));
- col=mix(col,C,smoothstep(.4,1.,length(q))*.55*(.5+B));
- col+=A*ring*.7+C*exp(-d*5.)*.2;
- float fil=pow(1.-abs(f-.5)*2.,8.);               // glowing filaments
- col+=C*fil*(.12+B*.3);
- col*=1.-dot(uv-.5,uv-.5)*1.1;
- gl_FragColor=vec4(col,1.);
+vec2 uv=gl_FragCoord.xy/R;
+vec2 p=(gl_FragCoord.xy-.5*R)/R.y;
+vec2 m=(M-.5*R)/R.y,s=(SP-.5*R)/R.y;
+float d=length(p-m);
+p+=(p-m)*.18*exp(-d*4.);
+float sd=length(p-s),age=T-ST;
+float ring=exp(-pow((sd-age*.7)*12.,2.))*exp(-age*1.4);
+p+=normalize(p-s+1e-4)*ring*.06;
+float t=T*.12;
+vec2 q=vec2(fbm(p*2.+t),fbm(p*2.+vec2(5.2,1.3)-t));
+vec2 r=vec2(fbm(p*2.+4.*q+vec2(1.7,9.2)+t*1.5),fbm(p*2.+4.*q+vec2(8.3,2.8)-t*1.2));
+float f=fbm(p*2.+4.*r);
+vec3 col=mix(BG,A,smoothstep(.2,.85,f)*(.5+B*.7));
+col=mix(col,C,smoothstep(.4,1.,length(q))*.55*(.5+B));
+col+=A*ring*.7+C*exp(-d*5.)*.2;
+float fil=pow(1.-abs(f-.5)*2.,8.);
+col+=C*fil*(.12+B*.3);
+col*=1.-dot(uv-.5,uv-.5)*1.1;
+gl_FragColor=vec4(col,1.);
 }`;
+
 let gl=null;const U={};
+
 try{
  gl=gc.getContext("webgl",{antialias:false});
- const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o};
+ const sh=(t,s)=>{
+  const o=gl.createShader(t);
+  gl.shaderSource(o,s);gl.compileShader(o);
+  if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(o));
+  return o;
+ };
  const pr=gl.createProgram();
  gl.attachShader(pr,sh(gl.VERTEX_SHADER,"attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}"));
- gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);
- if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw 0;
+ gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));
+ gl.linkProgram(pr);
+ if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error("Shader link failed");
  gl.useProgram(pr);
  gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());
  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
- const l=gl.getAttribLocation(pr,"p");gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,2,gl.FLOAT,false,0,0);
+ const l=gl.getAttribLocation(pr,"p");
+ gl.enableVertexAttribArray(l);
+ gl.vertexAttribPointer(l,2,gl.FLOAT,false,0,0);
  ["R","M","SP","T","B","ST","A","C","BG"].forEach(k=>U[k]=gl.getUniformLocation(pr,k));
-}catch(e){gl=null;gc.style.display="none"}
+}catch(e){
+ gl=null;gc.style.display="none";
+}
 
 function resize(){
- const d=devicePixelRatio||1;W=innerWidth;H=innerHeight;
- cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0);
+ const d=devicePixelRatio||1;
+ W=innerWidth;H=innerHeight;
+ cv.width=W*d;cv.height=H*d;
+ cx.setTransform(d,0,0,d,0,0);
  gc.width=Math.ceil(W*GS);gc.height=Math.ceil(H*GS);
- parts=Array.from({length:Math.min(80,Math.floor(W*H/13000))},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.6,vy:(Math.random()-.5)*.6,r:Math.random()*2+.8,c:Math.random()>.5,p:Math.random()*6.28}));
+ parts=Array.from({length:Math.min(80,Math.floor(W*H/13000))},()=>({
+  x:Math.random()*W,y:Math.random()*H,
+  vx:(Math.random()-.5)*.6,vy:(Math.random()-.5)*.6,
+  r:Math.random()*2+.8,c:Math.random()>.5,p:Math.random()*6.28
+ }));
  stars=Array.from({length:220},()=>({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()*.95+.05}));
  drops=Array.from({length:Math.ceil(W/16)},()=>({h:-Math.random()*30,v:Math.random()*10+6}));
 }
 addEventListener("resize",resize);
+
 addEventListener("pointermove",e=>{
  mouse.x=e.clientX;mouse.y=e.clientY;
- trail.push({x:e.clientX,y:e.clientY,l:1});if(trail.length>36)trail.shift();
+ trail.push({x:e.clientX,y:e.clientY,l:1});
+ if(trail.length>36)trail.shift();
  const r=$("card").getBoundingClientRect();
  $("card").style.setProperty("--mx",(e.clientX-r.left)+"px");
  $("card").style.setProperty("--my",(e.clientY-r.top)+"px");
 });
-addEventListener("pointerdown",e=>{shock={x:e.clientX*GS,y:(H-e.clientY)*GS,t:tNow};warp=14});
+
+addEventListener("pointerdown",e=>{
+ shock={x:e.clientX*GS,y:(H-e.clientY)*GS,t:tNow};
+ warp=14;
+});
+
+let conf=[];
 function burst(x,y,n=90){
- for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*9+3;
-  conf.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-5,r:Math.random()*5+2,c:Math.random()>.5?cA:cB,l:1,rot:Math.random()*6})}
+ for(let i=0;i<n;i++){
+  const a=Math.random()*6.28,s=Math.random()*9+3;
+  conf.push({
+   x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-5,
+   r:Math.random()*5+2,c:Math.random()>.5?cA:cB,
+   l:1,rot:Math.random()*6.28
+  });
+ }
 }
+
 const LAYERS={
  nebula(t){
   for(const p of parts){
    if(!still){p.y-=.3+p.r*.12;p.x+=Math.sin(t+p.p)*.35}
    if(p.y<-5){p.y=H+5;p.x=Math.random()*W}
-   const dx=p.x-mouse.x,dy=p.y-mouse.y,nr=Math.max(0,1-Math.hypot(dx,dy)/150);
-   cx.globalAlpha=.3+nr*.7;cx.fillStyle=p.c?cA:cB;
+   const dx=p.x-mouse.x,dy=p.y-mouse.y;
+   const nr=Math.max(0,1-Math.hypot(dx,dy)/150);
+   cx.globalAlpha=.3+nr*.7;
+   cx.fillStyle=p.c?cA:cB;
    cx.beginPath();cx.arc(p.x+dx*nr*.25,p.y+dy*nr*.25,p.r+nr*2.5,0,6.28);cx.fill();
   }
  },
@@ -261,25 +334,38 @@ const LAYERS={
   for(let i=0;i<parts.length;i++){
    const p=parts[i];
    if(!still){p.x+=p.vx;p.y+=p.vy}
-   if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+   if(p.x<0||p.x>W)p.vx*=-1;
+   if(p.y<0||p.y>H)p.vy*=-1;
    const md=Math.hypot(p.x-mouse.x,p.y-mouse.y);
-   if(md<180){p.x+=(mouse.x-p.x)*.012;p.y+=(mouse.y-p.y)*.012;
-    cx.globalAlpha=(1-md/180)*.8;cx.strokeStyle=cB;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(mouse.x,mouse.y);cx.stroke()}
+   if(md<180){
+    p.x+=(mouse.x-p.x)*.012;p.y+=(mouse.y-p.y)*.012;
+    cx.globalAlpha=(1-md/180)*.8;
+    cx.strokeStyle=cB;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(mouse.x,mouse.y);cx.stroke();
+   }
    for(let j=i+1;j<parts.length;j++){
     const q=parts[j],d=Math.hypot(p.x-q.x,p.y-q.y);
-    if(d<130){cx.globalAlpha=(1-d/130)*.5;cx.strokeStyle=cA;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke()}
+    if(d<130){
+     cx.globalAlpha=(1-d/130)*.5;cx.strokeStyle=cA;
+     cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke();
+    }
    }
-   cx.globalAlpha=.9;cx.fillStyle=p.c?cA:cB;cx.beginPath();cx.arc(p.x,p.y,p.r+1,0,6.28);cx.fill();
+   cx.globalAlpha=.9;cx.fillStyle=p.c?cA:cB;
+   cx.beginPath();cx.arc(p.x,p.y,p.r+1,0,6.28);cx.fill();
   }
  },
  warp(){
   warp+=(1-warp)*.04;
-  const sp=.006*(warp+boost*2),ox=W/2+(mouse.x>0?(mouse.x-W/2)*.2:0),oy=H/2+(mouse.y>0?(mouse.y-H/2)*.2:0),k=Math.max(W,H)*.5;
+  const sp=.006*(warp+boost*2);
+  const ox=W/2+(mouse.x>0?(mouse.x-W/2)*.2:0);
+  const oy=H/2+(mouse.y>0?(mouse.y-H/2)*.2:0);
+  const k=Math.max(W,H)*.5;
   for(const s of stars){
    const pz=s.z;s.z-=sp;
    if(s.z<=.02){s.x=Math.random()*2-1;s.y=Math.random()*2-1;s.z=1;continue}
-   const x1=ox+s.x/s.z*k*.5,y1=oy+s.y/s.z*k*.5,x0=ox+s.x/(pz+sp*.6)*k*.5,y0=oy+s.y/(pz+sp*.6)*k*.5;
-   cx.globalAlpha=Math.min(1,(1-s.z)*1.4);cx.strokeStyle=s.x>0?cA:cB;cx.lineWidth=(1-s.z)*2.6+.4;
+   const x1=ox+s.x/s.z*k*.5,y1=oy+s.y/s.z*k*.5;
+   const x0=ox+s.x/(pz+sp*.6)*k*.5,y0=oy+s.y/(pz+sp*.6)*k*.5;
+   cx.globalAlpha=Math.min(1,(1-s.z)*1.4);
+   cx.strokeStyle=s.x>0?cA:cB;cx.lineWidth=(1-s.z)*2.6+.4;
    cx.beginPath();cx.moveTo(x0,y0);cx.lineTo(x1,y1);cx.stroke();
   }
  },
@@ -297,6 +383,7 @@ const LAYERS={
   }
  }
 };
+
 function frame(ms){
  tNow=still?5:ms/1000;
  const count=S.done.filter(Boolean).length;
@@ -313,82 +400,147 @@ function frame(ms){
  }
  cx.clearRect(0,0,W,H);
  LAYERS[MODES[mode]](tNow);
- cx.lineWidth=1;
- for(let i=trail.length-1;i>=0;i--){ // glowing cursor trail
-  const p=trail[i];p.l-=.045;if(p.l<=0){trail.splice(i,1);continue}
-  cx.globalAlpha=p.l*.6;cx.fillStyle=cB;cx.beginPath();cx.arc(p.x,p.y,p.l*5,0,6.28);cx.fill();
+ for(let i=trail.length-1;i>=0;i--){
+  const p=trail[i];p.l-=.045;
+  if(p.l<=0){trail.splice(i,1);continue}
+  cx.globalAlpha=p.l*.6;cx.fillStyle=cB;
+  cx.beginPath();cx.arc(p.x,p.y,p.l*5,0,6.28);cx.fill();
  }
  for(let i=conf.length-1;i>=0;i--){
-  const c=conf[i];c.x+=c.vx;c.y+=c.vy;c.vy+=.35;c.vx*=.99;c.l-=.012;c.rot+=.2;
+  const c=conf[i];
+  c.x+=c.vx;c.y+=c.vy;c.vy+=.35;c.vx*=.99;c.l-=.012;c.rot+=.2;
   if(c.l<=0){conf.splice(i,1);continue}
-  cx.globalAlpha=c.l;cx.fillStyle=c.c;cx.save();cx.translate(c.x,c.y);cx.rotate(c.rot);cx.fillRect(-c.r,-c.r/2,c.r*2,c.r);cx.restore();
+  cx.globalAlpha=c.l;cx.fillStyle=c.c;
+  cx.save();cx.translate(c.x,c.y);cx.rotate(c.rot);
+  cx.fillRect(-c.r,-c.r/2,c.r*2,c.r);cx.restore();
  }
  cx.globalAlpha=1;
  requestAnimationFrame(frame);
 }
-function setFx(i){mode=i;pref("fx",MODES[i]);$("fxb").textContent=ICONS[i];$("fxb").title=$("fxb").ariaLabel="Background: "+MODES[i]}
-$("fxb").onclick=()=>{setFx((mode+1)%MODES.length);sfx.click();shock={x:gc.width/2,y:gc.height/2,t:tNow}};
-setFx(mode);
 
-/* ---------- ripple ---------- */
+function setFx(i){
+ mode=i;pref("fx",MODES[i]);
+ $("fxb").textContent=ICONS[i];
+ $("fxb").title=$("fxb").ariaLabel="Background: "+MODES[i];
+}
+$("fxb").onclick=()=>{
+ setFx((mode+1)%MODES.length);sfx.click();
+ shock={x:gc.width/2,y:gc.height/2,t:tNow};
+};
+
 document.addEventListener("pointerdown",e=>{
- const b=e.target.closest("button");if(!b||b.disabled||b.classList.contains("dot"))return;
+ const b=e.target.closest("button");
+ if(!b||b.disabled||b.classList.contains("dot"))return;
  const r=b.getBoundingClientRect(),s=document.createElement("span"),z=Math.max(r.width,r.height);
- s.className="rip";s.style.cssText=`width:${z}px;height:${z}px;left:${e.clientX-r.left-z/2}px;top:${e.clientY-r.top-z/2}px`;
- b.appendChild(s);setTimeout(()=>s.remove(),600);
+ s.className="rip";
+ s.style.cssText=`width:${z}px;height:${z}px;left:${e.clientX-r.left-z/2}px;top:${e.clientY-r.top-z/2}px`;
+ b.appendChild(s);
+ setTimeout(()=>s.remove(),600);
 });
 
-/* ---------- task UI ---------- */
 function build(){
  $("tasksArea").innerHTML=STEPS.map((s,i)=>`
-  <div class="task locked" id="task${i}">
-   <div class="taskTop"><div class="ico" id="ico${i}">${s.ico}</div>
-    <div><div class="taskTitle">${s.title}</div><div class="taskDesc">${s.desc}</div></div></div>
-   <div class="verify"><i></i></div>
-   <div class="taskStatus" id="st${i}"></div>
-   <button id="btn${i}" data-i="${i}"></button>
-  </div>`).join("")+`<button id="claim" disabled>Generate 24-hour key</button>`;
- document.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>stepClick(+b.dataset.i));
+ <div class="task locked" id="task${i}">
+  <div class="taskTop">
+   <div class="ico" id="ico${i}">${s.ico}</div>
+   <div><div class="taskTitle">${s.title}</div><div class="taskDesc">${s.desc}</div></div>
+  </div>
+  <div class="verify"><i></i></div>
+  <div class="taskStatus" id="st${i}"></div>
+  <button id="btn${i}" data-i="${i}"></button>
+ </div>`).join("")+`<button id="claim" disabled>Generate 24-hour key</button>`;
+
+ document.querySelectorAll("[data-i]").forEach(b=>{
+  b.onclick=()=>stepClick(+b.dataset.i);
+ });
  $("claim").onclick=claim;
 }
+
 function active(){return S.done.indexOf(0)}
 
 function render(){
  const act=active(),count=S.done.filter(Boolean).length;
  $("progressBar").style.width=(count/4*100)+"%";
+
  STEPS.forEach((s,i)=>{
-  const el=$("task"+i),btn=$("btn"+i),st=$("st"+i);if(!el)return;
+  const el=$("task"+i),btn=$("btn"+i),st=$("st"+i);
+  if(!el)return;
+
   const done=!!S.done[i],isAct=i===act,started=S.started[i]>0;
   const waited=started&&(Date.now()-S.started[i])/1000>=s.wait;
+
   el.className="task "+(done?"done":isAct?"active":"locked")+(isAct&&started&&!waited?" running":"");
-  if(done){$("ico"+i).textContent="✓";btn.classList.add("hidden");st.textContent="Completed";return}
-  if(!isAct){btn.disabled=true;btn.textContent=s.btn;st.textContent="Finish the previous step first.";return}
-  if(!started){btn.disabled=false;btn.textContent=s.btn;st.textContent="Ready when you are.";return}
-  if(!waited){btn.disabled=true;btn.textContent="Verifying…";st.textContent=s.run;return}
-  if(s.confirm){btn.disabled=false;btn.textContent=s.ok;st.textContent="Confirm once you're done.";return}
-  complete(i); // auto-complete step
+
+  if(done){
+   $("ico"+i).textContent="✓";
+   btn.classList.add("hidden");
+   st.textContent="Completed";
+   return;
+  }
+
+  if(!isAct){
+   btn.disabled=true;
+   btn.textContent=s.btn;
+   st.textContent="Finish the previous step first.";
+   return;
+  }
+
+  if(!started){
+   btn.disabled=false;
+   btn.textContent=s.btn;
+   st.textContent="Ready when you are.";
+   return;
+  }
+
+  if(!waited){
+   btn.disabled=true;
+   btn.textContent="Verifying…";
+   st.textContent=s.run;
+   return;
+  }
+
+  if(s.confirm){
+   btn.disabled=false;
+   btn.textContent=s.ok;
+   st.textContent="Confirm once you're done.";
+   return;
+  }
+
+  complete(i);
  });
- const claim=$("claim");
- if(claim&&!claim.classList.contains("hidden")){
+
+ const claimButton=$("claim");
+ if(claimButton&&!claimButton.classList.contains("hidden")){
   const ready=count===4&&!busy;
-  if(claim.disabled&&ready)sfx.win();
-  claim.disabled=!ready;
-  if(count===4&&!$("keyBox").style.display.includes("block"))$("status").textContent="All done. Generate your key.";
+  claimButton.disabled=!ready;
+  if(count===4)$("status").textContent="All done. Generate your key.";
  }
 }
+
 function complete(i){
  if(S.done[i])return;
- S.done[i]=1;save();sfx.done();
- const r=$("task"+i).getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,24);
+ S.done[i]=1;
+ save();sfx.done();
+ const r=$("task"+i).getBoundingClientRect();
+ burst(r.left+r.width/2,r.top+r.height/2,24);
  render();
 }
+
 function stepClick(i){
  if(i!==active())return;
  sfx.click();
  const s=STEPS[i];
+
  if(!S.started[i]){
-  S.started[i]=Date.now();save();
-  if(s.tab){location.href=s.url;return}
+  S.started[i]=Date.now();
+  save();
+
+  if(s.tab){
+   // Progress is saved before leaving this page.
+   location.href=s.url;
+   return;
+  }
+
   window.open(s.url,"_blank","noopener,noreferrer");
   render();
  }else if(s.confirm){
@@ -397,57 +549,98 @@ function stepClick(i){
 }
 
 async function startTasks(){
- $("start").disabled=true;$("status").textContent="Creating your session…";sfx.click();
+ $("start").disabled=true;
+ $("status").textContent="Creating your session…";
+ sfx.click();
+
  try{
   const r=await post("/api/start");
-  S={challenge:r.challenge,done:[0,0,0,0],started:[0,0,0,0]};save();
+  S={challenge:r.challenge,done:[0,0,0,0],started:[0,0,0,0]};
+  save();
+
   $("startArea").classList.add("hidden");
-  build();$("tasksArea").classList.remove("hidden");
+  build();
+  $("tasksArea").classList.remove("hidden");
   $("status").textContent="Start with the first task.";
   render();
- }catch(e){$("start").disabled=false;$("status").textContent=e.message;sfx.err();$("card").classList.add("shake");setTimeout(()=>$("card").classList.remove("shake"),400)}
+ }catch(e){
+  $("start").disabled=false;
+  $("status").textContent=e.message;
+  sfx.err();
+  $("card").classList.add("shake");
+  setTimeout(()=>$("card").classList.remove("shake"),400);
+ }
 }
 $("start").onclick=startTasks;
 
 async function claim(){
  if(S.done.some(v=>!v)||busy)return;
- busy=true;$("claim").disabled=true;$("status").textContent="Generating your key…";
+
+ busy=true;
+ $("claim").disabled=true;
+ $("status").textContent="Generating your key…";
+
  try{
   const r=await post("/api/claim",{challenge:S.challenge});
   $("claim").classList.add("hidden");
   $("keyBox").style.display="block";
   scramble($("key"),String(r.key));
-  try{sessionStorage.removeItem(STORAGE_KEY)}catch(e){}
+
+  try{localStorage.removeItem(STORAGE_KEY)}catch(e){}
+
   $("status").textContent="Your key is ready!";
-  sfx.win();const b=$("keyBox").getBoundingClientRect();burst(b.left+b.width/2,b.top,140);
+  sfx.win();
+
+  const b=$("keyBox").getBoundingClientRect();
+  burst(b.left+b.width/2,b.top,140);
  }catch(e){
-  busy=false;$("claim").disabled=false;$("status").textContent=e.message;sfx.err();
-  $("card").classList.add("shake");setTimeout(()=>$("card").classList.remove("shake"),400);
+  busy=false;
+  $("claim").disabled=false;
+  $("status").textContent=e.message;
+  sfx.err();
+  $("card").classList.add("shake");
+  setTimeout(()=>$("card").classList.remove("shake"),400);
  }
 }
+
 function scramble(el,text){
- const chars="ABCDEF0123456789-_";let n=0;
+ const chars="ABCDEF0123456789-_";
+ let n=0;
  if(still){el.textContent=text;return}
  const iv=setInterval(()=>{
   el.textContent=text.split("").map((c,i)=>i<n||c==="-"?c:chars[Math.random()*chars.length|0]).join("");
-  n+=Math.max(1,text.length/28);if(n>=text.length){el.textContent=text;clearInterval(iv)}
+  n+=Math.max(1,text.length/28);
+  if(n>=text.length){el.textContent=text;clearInterval(iv)}
  },40);
 }
+
 $("copy").onclick=async()=>{
  sfx.click();
- try{await navigator.clipboard.writeText($("key").textContent);$("status").textContent="Key copied!";$("copy").textContent="Copied ✓";setTimeout(()=>$("copy").textContent="Copy key",1800)}
- catch{$("status").textContent="Couldn't copy. Select the key and copy it manually."}
+ try{
+  await navigator.clipboard.writeText($("key").textContent);
+  $("status").textContent="Key copied!";
+  $("copy").textContent="Copied ✓";
+  setTimeout(()=>$("copy").textContent="Copy key",1800);
+ }catch{
+  $("status").textContent="Couldn't copy. Select the key and copy it manually.";
+ }
 };
 
-/* ---------- boot ---------- */
 setTheme(pref("theme")||"ember");
-resize();requestAnimationFrame(frame);
+resize();
+requestAnimationFrame(frame);
+
 if(load()&&S.challenge){
- $("startArea").classList.add("hidden");build();$("tasksArea").classList.remove("hidden");
+ $("startArea").classList.add("hidden");
+ build();
+ $("tasksArea").classList.remove("hidden");
  $("status").textContent="Welcome back. Your progress was restored.";
  render();
 }
-setInterval(()=>{if($("claim"))render()},300);
+
+setInterval(()=>{
+ if($("claim"))render();
+},300);
 </script>
 </body>
 </html>
