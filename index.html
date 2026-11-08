@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" data-theme="ember">
 <head>
@@ -109,11 +110,10 @@ const $=id=>document.getElementById(id);
 let S={challenge:null,done:[0,0,0,0],started:[0,0,0,0]};
 let busy=false;
 let linkVerifyBusy=false;
+let linkVerifyMessage="";
 
 function save(){
- try{
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(S));
- }catch(e){}
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(S))}catch(e){}
 }
 
 function load(){
@@ -494,12 +494,10 @@ function render(){
    return;
   }
 
-  // Linkvertise is verified by the Cloudflare Worker.
-  // It must never be completed using a manual confirmation button.
   if(s.linkvertise){
-   btn.disabled=false;
-   btn.textContent="Reopen Linkvertise";
-   st.textContent="Complete Linkvertise. You'll return here for automatic verification.";
+   btn.disabled=linkVerifyBusy;
+   btn.textContent=linkVerifyBusy?"Checking Linkvertise...":"Reopen Linkvertise";
+   st.textContent=linkVerifyMessage||"Complete Linkvertise. You'll return here for automatic verification.";
    return;
   }
 
@@ -548,7 +546,6 @@ function stepClick(i){
   save();
 
   if(s.tab){
-   // Save the challenge and task progress before leaving this page.
    location.href=s.url;
    return;
   }
@@ -559,7 +556,8 @@ function stepClick(i){
  }
 
  if(s.linkvertise){
-  // Allows the user to reopen Linkvertise if they need to retry.
+  linkVerifyMessage="";
+  save();
   location.href=s.url;
   return;
  }
@@ -575,34 +573,24 @@ async function verifyLinkvertiseReturn(){
 
  if(!linkHash){
   if(S.started[2]&&!S.done[2]){
-   $("status").textContent="Waiting for Linkvertise. If you already completed it, reopen Task 3 and try again.";
+   linkVerifyMessage="No hash was received. Reopen Linkvertise and complete the steps.";
+   $("status").textContent=linkVerifyMessage;
    render();
   }
   return;
  }
 
- // Remove the hash from the visible URL after saving it in memory.
-// const cleanUrl=new URL(location.href);
-// cleanUrl.searchParams.delete("hash");
-// history.replaceState({},document.title,cleanUrl.pathname+cleanUrl.search+cleanUrl.hash);
-
  if(!S.challenge||!S.started[2]){
-  $("status").textContent="No active Get Key session was found. Please start again.";
+  $("status").textContent="No active Get Key session was found. Please restart your tasks.";
   return;
  }
 
- if(S.done[2])return;
- if(linkVerifyBusy)return;
+ if(S.done[2]||linkVerifyBusy)return;
 
  linkVerifyBusy=true;
-
- const btn=$("btn2");
- if(btn){
-  btn.disabled=true;
-  btn.textContent="Checking Linkvertise...";
- }
-
- $("status").textContent="Verifying your Linkvertise completion...";
+ linkVerifyMessage="Hash received. Contacting the verification server...";
+ $("status").textContent=linkVerifyMessage;
+ render();
 
  try{
   const result=await post("/api/linkvertise/verify",{
@@ -611,11 +599,20 @@ async function verifyLinkvertiseReturn(){
   });
 
   if(!result.success||!result.verified){
-   throw new Error("Linkvertise verification was unsuccessful. Please reopen Task 3 and try again.");
+   throw new Error(result.error||"The server did not confirm Linkvertise verification.");
   }
 
   S.done[2]=1;
+  linkVerifyMessage="";
   save();
+
+  const cleanUrl=new URL(location.href);
+  cleanUrl.searchParams.delete("hash");
+  history.replaceState({},document.title,
+   cleanUrl.pathname+cleanUrl.search+cleanUrl.hash
+  );
+
+  $("status").textContent="Linkvertise successfully verified!";
   sfx.done();
 
   const task=$("task2");
@@ -624,16 +621,17 @@ async function verifyLinkvertiseReturn(){
    burst(r.left+r.width/2,r.top+r.height/2,45);
   }
 
-  $("status").textContent="Linkvertise successfully verified!";
   render();
 
  }catch(e){
-  if(btn)btn.disabled=false;
-  $("status").textContent=e.message||"Couldn't verify Linkvertise. Please try again.";
+  linkVerifyMessage="Verification failed: "+e.message;
+  $("status").textContent=linkVerifyMessage;
   sfx.err();
   render();
+
  }finally{
   linkVerifyBusy=false;
+  render();
  }
 }
 
@@ -650,6 +648,7 @@ async function startTasks(){
   }
 
   S={challenge:r.challenge,done:[0,0,0,0],started:[0,0,0,0]};
+  linkVerifyMessage="";
   save();
 
   $("startArea").classList.add("hidden");
@@ -734,15 +733,12 @@ setTheme(pref("theme")||"ember");
 resize();
 requestAnimationFrame(frame);
 
-// Restore the existing session after returning from Linkvertise.
 if(load()&&S.challenge){
  $("startArea").classList.add("hidden");
  build();
  $("tasksArea").classList.remove("hidden");
  $("status").textContent="Welcome back. Your progress was restored.";
  render();
-
- // If Linkvertise returned a hash, verify it with the Worker.
  verifyLinkvertiseReturn();
 }
 
