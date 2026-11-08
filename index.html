@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" data-theme="ember">
 <head>
@@ -102,13 +101,14 @@ const STORAGE_KEY="incrementalui_task_session_v2";
 const STEPS=[
  {ico:"▶",title:"Visit YouTube channel",desc:"Open our official channel.",url:"https://www.youtube.com/@IncrementalScrips",wait:15,btn:"Open channel",run:"Verifying visit…"},
  {ico:"🎬",title:"Watch the video",desc:"Open our IncrementalUi video.",url:"https://youtu.be/NbvLSUvbQRo?si=g4F9Y81NwrwOVaDC",wait:30,btn:"Open video",run:"Verifying watch…"},
- {ico:"🔗",title:"Complete Linkvertise",desc:"Finish the Linkvertise steps, then come back.",url:"https://link-center.net/8008243/oGyJbUADMuHD",wait:8,confirm:true,tab:true,btn:"Open Linkvertise",run:"Waiting for you to finish…",ok:"I completed this"},
+ {ico:"🔗",title:"Complete Linkvertise",desc:"Finish the Linkvertise steps, then come back.",url:"https://link-center.net/8008243/oGyJbUADMuHD",wait:0,linkvertise:true,tab:true,btn:"Open Linkvertise",run:"Waiting for Linkvertise verification…"},
  {ico:"💬",title:"Join Discord",desc:"Join the IncrementalUi community.",url:"https://discord.gg/BGUQc9qqNM",wait:10,confirm:true,btn:"Open Discord invite",run:"Waiting for you to join…",ok:"I joined Discord"}
 ];
 
 const $=id=>document.getElementById(id);
 let S={challenge:null,done:[0,0,0,0],started:[0,0,0,0]};
 let busy=false;
+let linkVerifyBusy=false;
 
 function save(){
  try{
@@ -478,6 +478,8 @@ function render(){
    return;
   }
 
+  btn.classList.remove("hidden");
+
   if(!isAct){
    btn.disabled=true;
    btn.textContent=s.btn;
@@ -489,6 +491,15 @@ function render(){
    btn.disabled=false;
    btn.textContent=s.btn;
    st.textContent="Ready when you are.";
+   return;
+  }
+
+  // Linkvertise is verified by the Cloudflare Worker.
+  // It must never be completed using a manual confirmation button.
+  if(s.linkvertise){
+   btn.disabled=false;
+   btn.textContent="Reopen Linkvertise";
+   st.textContent="Complete Linkvertise. You'll return here for automatic verification.";
    return;
   }
 
@@ -529,6 +540,7 @@ function complete(i){
 function stepClick(i){
  if(i!==active())return;
  sfx.click();
+
  const s=STEPS[i];
 
  if(!S.started[i]){
@@ -536,15 +548,92 @@ function stepClick(i){
   save();
 
   if(s.tab){
-   // Progress is saved before leaving this page.
+   // Save the challenge and task progress before leaving this page.
    location.href=s.url;
    return;
   }
 
   window.open(s.url,"_blank","noopener,noreferrer");
   render();
- }else if(s.confirm){
+  return;
+ }
+
+ if(s.linkvertise){
+  // Allows the user to reopen Linkvertise if they need to retry.
+  location.href=s.url;
+  return;
+ }
+
+ if(s.confirm){
   complete(i);
+ }
+}
+
+async function verifyLinkvertiseReturn(){
+ const params=new URLSearchParams(location.search);
+ const linkHash=params.get("hash");
+
+ if(!linkHash){
+  if(S.started[2]&&!S.done[2]){
+   $("status").textContent="Waiting for Linkvertise. If you already completed it, reopen Task 3 and try again.";
+   render();
+  }
+  return;
+ }
+
+ // Remove the hash from the visible URL after saving it in memory.
+ const cleanUrl=new URL(location.href);
+ cleanUrl.searchParams.delete("hash");
+ history.replaceState({},document.title,cleanUrl.pathname+cleanUrl.search+cleanUrl.hash);
+
+ if(!S.challenge||!S.started[2]){
+  $("status").textContent="No active Get Key session was found. Please start again.";
+  return;
+ }
+
+ if(S.done[2])return;
+ if(linkVerifyBusy)return;
+
+ linkVerifyBusy=true;
+
+ const btn=$("btn2");
+ if(btn){
+  btn.disabled=true;
+  btn.textContent="Checking Linkvertise...";
+ }
+
+ $("status").textContent="Verifying your Linkvertise completion...";
+
+ try{
+  const result=await post("/api/linkvertise/verify",{
+   challenge:S.challenge,
+   hash:linkHash
+  });
+
+  if(!result.success||!result.verified){
+   throw new Error("Linkvertise verification was unsuccessful. Please reopen Task 3 and try again.");
+  }
+
+  S.done[2]=1;
+  save();
+  sfx.done();
+
+  const task=$("task2");
+  if(task){
+   const r=task.getBoundingClientRect();
+   burst(r.left+r.width/2,r.top+r.height/2,45);
+  }
+
+  $("status").textContent="Linkvertise successfully verified!";
+  render();
+
+ }catch(e){
+  if(btn)btn.disabled=false;
+  $("status").textContent=e.message||"Couldn't verify Linkvertise. Please try again.";
+  sfx.err();
+  render();
+ }finally{
+  linkVerifyBusy=false;
  }
 }
 
@@ -555,6 +644,11 @@ async function startTasks(){
 
  try{
   const r=await post("/api/start");
+
+  if(!r.challenge){
+   throw new Error("The server did not return a challenge. Please try again.");
+  }
+
   S={challenge:r.challenge,done:[0,0,0,0],started:[0,0,0,0]};
   save();
 
@@ -563,6 +657,7 @@ async function startTasks(){
   $("tasksArea").classList.remove("hidden");
   $("status").textContent="Start with the first task.";
   render();
+
  }catch(e){
   $("start").disabled=false;
   $("status").textContent=e.message;
@@ -582,6 +677,11 @@ async function claim(){
 
  try{
   const r=await post("/api/claim",{challenge:S.challenge});
+
+  if(!r.key){
+   throw new Error("The server did not return a key. Please try again.");
+  }
+
   $("claim").classList.add("hidden");
   $("keyBox").style.display="block";
   scramble($("key"),String(r.key));
@@ -593,6 +693,7 @@ async function claim(){
 
   const b=$("keyBox").getBoundingClientRect();
   burst(b.left+b.width/2,b.top,140);
+
  }catch(e){
   busy=false;
   $("claim").disabled=false;
@@ -626,16 +727,23 @@ $("copy").onclick=async()=>{
  }
 };
 
+$("fxb").textContent=ICONS[mode];
+$("fxb").title=$("fxb").ariaLabel="Background: "+MODES[mode];
+
 setTheme(pref("theme")||"ember");
 resize();
 requestAnimationFrame(frame);
 
+// Restore the existing session after returning from Linkvertise.
 if(load()&&S.challenge){
  $("startArea").classList.add("hidden");
  build();
  $("tasksArea").classList.remove("hidden");
  $("status").textContent="Welcome back. Your progress was restored.";
  render();
+
+ // If Linkvertise returned a hash, verify it with the Worker.
+ verifyLinkvertiseReturn();
 }
 
 setInterval(()=>{
